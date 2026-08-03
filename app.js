@@ -306,21 +306,52 @@ function renderizarFinanceiroSaripan() {
 // ==========================================
 window.adicionarRegistroModular = async () => {
     const mesStr = document.getElementById('mesModular').value; 
-    const adiantamento = parseFloat(document.getElementById('valorAdiantamento').value) || 0;
-    const salario = parseFloat(document.getElementById('valorSalario').value) || 0;
-    const outras = parseFloat(document.getElementById('valorOutras').value) || 0;
+    
+    const adiantamentoTela = parseFloat(document.getElementById('valorAdiantamento').value) || 0;
+    const salarioTela = parseFloat(document.getElementById('valorSalario').value) || 0;
+    const outrasTela = parseFloat(document.getElementById('valorOutras').value) || 0;
     const nomeOutras = document.getElementById('nomeOutras').value.trim() || 'Extra';
+    
     if (!mesStr) return alert("Selecione o mês.");
+    
     const [ano, mesNum] = mesStr.split('-').map(Number);
     const idUnico = `MOD-${ano}-${mesNum}`; 
-    const total = adiantamento + salario + outras; 
-    const novoReg = { id: idUnico, ano: ano, mes: mesNum - 1, adiantamento, salario, outras, nomeOutras, total };
+
+    let registroExistente = window.registrosModular.find(r => r.id === idUnico);
+
+    const adiantamentoFinal = adiantamentoTela > 0 ? adiantamentoTela : (registroExistente ? registroExistente.adiantamento : 0);
+    const salarioFinal = salarioTela > 0 ? salarioTela : (registroExistente ? registroExistente.salario : 0);
+    const outrasFinal = outrasTela > 0 ? outrasTela : (registroExistente ? registroExistente.outras : 0);
+    
+    const totalFinal = adiantamentoFinal + salarioFinal + outrasFinal; 
+    
+    const novoReg = { 
+        id: idUnico, 
+        ano: ano, 
+        mes: mesNum - 1, 
+        adiantamento: adiantamentoFinal, 
+        salario: salarioFinal, 
+        outras: outrasFinal, 
+        nomeOutras, 
+        total: totalFinal 
+    };
+
     try {
-        await setDoc(doc(db, "renda_modular", idUnico), novoReg);
+        await setDoc(doc(db, "renda_modular", idUnico), novoReg, { merge: true });
+        
         window.registrosModular = window.registrosModular.filter(r => r.id !== idUnico);
         window.registrosModular.push(novoReg);
-        renderizarHistoricoModular(); mostrarToast();
-    } catch(e) { console.error(e); }
+        
+        renderizarHistoricoModular(); 
+        mostrarToast();
+        
+        document.getElementById('valorAdiantamento').value = '';
+        document.getElementById('valorSalario').value = '';
+        document.getElementById('valorOutras').value = '';
+
+    } catch(e) { 
+        console.error(e); 
+    }
 };
 
 window.excluirRegistroModular = async (id) => {
