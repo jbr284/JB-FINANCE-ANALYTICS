@@ -282,25 +282,128 @@ function renderizarFinanceiroSaripan() {
     anosOrdenados.forEach(ano => {
         const mesesDesteAno = chavesMes.filter(k => k.startsWith(`${ano}-`));
         let totalAcumuladoAno = 0, totalFechadoAno = 0, qtdMesesFechados = 0;
-        const labels = [], dadosQ1 = [], dadosQ2 = [];
+        const labels = [], dadosTotalMes = [], dadosQ1 = [], dadosQ2 = [];
         let htmlTabela = `<table class="fin-table" style="margin-bottom:30px;"><thead><tr><th>Mês</th><th style="text-align:right">1ª Q.</th><th style="text-align:right">2ª Q.</th><th style="text-align:right; background:#003c8f; color:white;">Total</th></tr></thead><tbody>`;
         mesesDesteAno.forEach(k => {
             const d = dadosMes[k]; const totalDoMes = d.q1 + d.q2; totalAcumuladoAno += totalDoMes;
             if (d.ano < anoAtual || (d.ano === anoAtual && d.mes < mesAtual)) { totalFechadoAno += totalDoMes; qtdMesesFechados++; }
-            labels.push(MESES[d.mes].substring(0, 3)); dadosQ1.push(d.q1); dadosQ2.push(d.q2);
+            labels.push(MESES[d.mes].substring(0, 3)); 
+            dadosTotalMes.push(totalDoMes);
+            dadosQ1.push(d.q1); 
+            dadosQ2.push(d.q2);
             htmlTabela += `<tr><td>${MESES[d.mes]}</td><td style="text-align:right" class="esconder-valor">R$ ${d.q1.toFixed(2)}</td><td style="text-align:right" class="esconder-valor">R$ ${d.q2.toFixed(2)}</td><td style="text-align:right" class="fin-row-total esconder-valor">R$ ${totalDoMes.toFixed(2)}</td></tr>`;
         });
         htmlTabela += `</tbody></table>`;
-        const mediaTotal = qtdMesesFechados > 0 ? (totalFechadoAno / qtdMesesFechados) : 0;
+        
+        // REGRAS DE NEGÓCIO ALINHADAS PARA MÉDIAS:
+        // MÉDIA PARCIAL = Apenas meses fechados (Rendimento dos meses fechados / Qtd de meses fechados)
+        const mediaParcial = qtdMesesFechados > 0 ? (totalFechadoAno / qtdMesesFechados) : 0;
+        
+        // MÉDIA TOTAL = Todo o rendimento acumulado até hoje / tempo proporcional decorrido no ano
         let divisorProporcional = mesesDesteAno.length; 
         if (Number(ano) === anoAtual) { divisorProporcional = mesAtual + (diaAtual / 30); }
-        const mediaParcial = divisorProporcional > 0 ? (totalAcumuladoAno / divisorProporcional) : 0;
-        htmlFinal += `<h4 style="margin-top: 10px; color: #555; border-bottom: 2px solid #ddd; padding-bottom: 5px; text-transform: uppercase;">Resumo Saripan ${ano}</h4><div style="display: flex; gap: 10px; margin-bottom: 15px;"><div class="year-summary" style="flex: 1; padding: 10px;"><h4>RENDIMENTO ANUAL</h4><div class="year-total-value esconder-valor" style="font-size: 17px; margin-top: 10px;">${totalAcumuladoAno.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</div></div><div class="year-summary" style="flex: 1.8; padding: 10px; background: #e3f2fd; border-color: #90caf9;"><h4 style="color: #1565c0; font-size: 11px; margin-bottom: 10px;">Média Salarial</h4><div style="display: flex; justify-content: space-around; font-size: 14px; color: #0d47a1;"><div style="text-align: center;"><span style="font-size: 10px; font-weight: bold;">PARCIAL</span><br><strong class="esconder-valor" style="font-size: 15px;">${mediaParcial.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</strong></div><div style="width: 1px; background: #bbdefb; margin: 0 5px;"></div><div style="text-align: center;"><span style="font-size: 10px; font-weight: bold;">TOTAL</span><br><strong class="esconder-valor" style="font-size: 15px;">${mediaTotal.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</strong></div></div></div></div><div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;"><div style="position: relative; height: 220px; width: 100%;"><canvas id="grafico-sari-${ano}" class="esconder-valor"></canvas></div></div>${htmlTabela}`;
+        const mediaTotal = divisorProporcional > 0 ? (totalAcumuladoAno / divisorProporcional) : 0;
+        
+        htmlFinal += `<h4 style="margin-top: 10px; color: #555; border-bottom: 2px solid #ddd; padding-bottom: 5px; text-transform: uppercase;">Resumo Saripan ${ano}</h4>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <div class="year-summary" style="flex: 1; padding: 10px;">
+                <h4>RENDIMENTO ANUAL</h4>
+                <div class="year-total-value esconder-valor" style="font-size: 17px; margin-top: 10px;">${totalAcumuladoAno.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</div>
+            </div>
+            <div class="year-summary" style="flex: 1.8; padding: 10px; background: #e3f2fd; border-color: #90caf9;">
+                <h4 style="color: #1565c0; font-size: 11px; margin-bottom: 10px;">Média Salarial</h4>
+                <div style="display: flex; justify-content: space-around; font-size: 14px; color: #0d47a1;">
+                    <div style="text-align: center;">
+                        <span style="font-size: 10px; font-weight: bold;">PARCIAL</span><br>
+                        <strong class="esconder-valor" style="font-size: 15px;">${mediaParcial.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</strong>
+                    </div>
+                    <div style="width: 1px; background: #bbdefb; margin: 0 5px;"></div>
+                    <div style="text-align: center;">
+                        <span style="font-size: 10px; font-weight: bold;">TOTAL</span><br>
+                        <strong class="esconder-valor" style="font-size: 15px;">${mediaTotal.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
+            <h5 style="margin-bottom: 10px; color: #333; font-size: 12px; text-align: center;">Poder de Fogo Mensal (Rendimento Total)</h5>
+            <div style="position: relative; height: 200px; width: 100%; margin-bottom: 20px;">
+                <canvas id="grafico-sari-bar-${ano}" class="esconder-valor"></canvas>
+            </div>
+            <h5 style="margin-bottom: 10px; color: #333; font-size: 12px; text-align: center; border-top: 1px dashed #eee; padding-top: 15px;">Pulsação Quinzenal (Comparativo Q1 vs Q2)</h5>
+            <div style="position: relative; height: 200px; width: 100%;">
+                <canvas id="grafico-sari-line-${ano}" class="esconder-valor"></canvas>
+            </div>
+        </div>
+        ${htmlTabela}`;
+
         setTimeout(() => {
-            const ctx = document.getElementById(`grafico-sari-${ano}`);
-            if (ctx) {
-                const myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [ { label: '1ª Quinzena', data: dadosQ1, backgroundColor: '#81c784', borderRadius: 4 }, { label: '2ª Quinzena', data: dadosQ2, backgroundColor: '#2e7d32', borderRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } }, scales: { y: { beginAtZero: true } } } });
-                window.chartsAtivos.push(myChart); 
+            // 1. Gráfico de Barras - Total do Mês
+            const ctxBar = document.getElementById(`grafico-sari-bar-${ano}`);
+            if (ctxBar) {
+                const chartBar = new Chart(ctxBar, { 
+                    type: 'bar', 
+                    data: { 
+                        labels: labels, 
+                        datasets: [ { 
+                            label: 'Rendimento Mensal Total', 
+                            data: dadosTotalMes, 
+                            backgroundColor: '#1b5e20', 
+                            borderRadius: 6 
+                        } ] 
+                    }, 
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { 
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } 
+                        }, 
+                        scales: { y: { beginAtZero: true } } 
+                    } 
+                });
+                window.chartsAtivos.push(chartBar); 
+            }
+
+            // 2. Gráfico de Linhas - Evolução Quinzenal (Q1 e Q2)
+            const ctxLine = document.getElementById(`grafico-sari-line-${ano}`);
+            if (ctxLine) {
+                const chartLine = new Chart(ctxLine, { 
+                    type: 'line', 
+                    data: { 
+                        labels: labels, 
+                        datasets: [ 
+                            { 
+                                label: '1ª Quinzena', 
+                                data: dadosQ1, 
+                                borderColor: '#81c784', 
+                                backgroundColor: 'rgba(129, 199, 132, 0.1)', 
+                                fill: true, 
+                                tension: 0.4, 
+                                pointRadius: 4, 
+                                pointHoverRadius: 6 
+                            }, 
+                            { 
+                                label: '2ª Quinzena', 
+                                data: dadosQ2, 
+                                borderColor: '#2e7d32', 
+                                backgroundColor: 'rgba(46, 125, 50, 0.1)', 
+                                fill: true, 
+                                tension: 0.4, 
+                                pointRadius: 4, 
+                                pointHoverRadius: 6 
+                            } 
+                        ] 
+                    }, 
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { 
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } 
+                        }, 
+                        scales: { y: { beginAtZero: true } } 
+                    } 
+                });
+                window.chartsAtivos.push(chartLine); 
             }
         }, 100);
     });
