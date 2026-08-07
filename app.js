@@ -326,11 +326,11 @@ function renderizarFinanceiroSaripan() {
             </div>
         </div>
         <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
-            <h5 style="margin-bottom: 10px; color: #333; font-size: 12px; text-align: center;">Poder de Fogo Mensal (Rendimento Total)</h5>
+            <h5 style="margin-bottom: 10px; color: #333; font-size: 12px; text-align: center;">Rendimento Mensal Consolidado</h5>
             <div style="position: relative; height: 200px; width: 100%; margin-bottom: 20px;">
                 <canvas id="grafico-sari-bar-${ano}" class="esconder-valor"></canvas>
             </div>
-            <h5 style="margin-bottom: 10px; color: #333; font-size: 12px; text-align: center; border-top: 1px dashed #eee; padding-top: 15px;">Pulsação Quinzenal (Comparativo Q1 vs Q2)</h5>
+            <h5 style="margin-bottom: 10px; color: #333; font-size: 12px; text-align: center; border-top: 1px dashed #eee; padding-top: 15px;">Comparativo Quinzenal (Q1 vs Q2)</h5>
             <div style="position: relative; height: 200px; width: 100%;">
                 <canvas id="grafico-sari-line-${ano}" class="esconder-valor"></canvas>
             </div>
