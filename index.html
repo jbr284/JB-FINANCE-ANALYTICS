@@ -15,25 +15,34 @@
 
   <div id="toast">✅ Operação realizada com sucesso!</div>
 
+  <!-- TELA DE LOGIN -->
   <div id="tela-login" class="container-center hidden">
     <h1 style="color:#002f6c; font-size: 35px; margin-bottom: 5px; text-align: center;">JB Finance Analytics</h1>
-    <p style="color:#666; margin-bottom: 30px;">Acesso restrito</p>
+    <p style="color:#666; margin-bottom: 30px;">Acesso restrito - ERP</p>
     <input type="email" id="emailLogin" class="input-login" placeholder="E-mail" autocomplete="username" style="max-width: 300px;">
     <input type="password" id="senhaLogin" class="input-login" placeholder="Senha" autocomplete="current-password" style="max-width: 300px;">
     <button class="btn-action btn-green" onclick="fazerLogin()" style="max-width: 300px;">Entrar</button>
   </div>
 
+  <!-- TELA HUB (MENU PRINCIPAL) -->
   <div id="tela-hub" class="container-center hidden">
     <h2 style="color:#002f6c; margin-bottom: 10px;">JB Finance Analytics</h2>
-    <p style="color:#666; margin-bottom: 30px;">O que deseja acessar?</p>
     
-    <button class="btn-big" style="background:#43a047;" onclick="abrirModulo('saripan')">🏢 Módulo SARIPAN</button>
-    <button class="btn-big" style="background:#1565c0;" onclick="abrirModulo('modular')">🏭 Módulo MODULAR</button>
-    <button class="btn-big" style="background:#f57c00; margin-top: 15px;" onclick="abrirModulo('geral')">📊 VISÃO GERAL</button>
+    <div style="width: 100%; max-width: 300px; margin: 0 auto; text-align: left;">
+        <h3 style="color:#f57c00; font-size: 13px; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">ABA 1: REMUNERAÇÕES</h3>
+        <button class="btn-big" style="background:#43a047; margin-bottom: 10px;" onclick="abrirModulo('saripan')">🏢 Módulo SARIPAN</button>
+        <button class="btn-big" style="background:#1565c0; margin-bottom: 10px;" onclick="abrirModulo('modular')">🏭 Módulo MODULAR</button>
+        <button class="btn-big" style="background:#f57c00; margin-bottom: 25px;" onclick="abrirModulo('geral')">📊 VISÃO GERAL (Entradas)</button>
+
+        <h3 style="color:#002f6c; font-size: 13px; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">ABA 2 & 3: GESTÃO FINANCEIRA</h3>
+        <button class="btn-big" style="background:#455a64; margin-bottom: 10px;" onclick="abrirModulo('bancos')">🏦 Bancos e Extratos</button>
+        <button class="btn-big" style="background:#6a1b9a; margin-bottom: 10px;" onclick="abrirModulo('relatorios')">📈 Relatórios Consolidados</button>
+    </div>
     
-    <button style="margin-top: 40px; padding: 10px 20px; background: transparent; border: 1px solid #ccc; color: #666; border-radius: 6px; cursor: pointer;" onclick="sairApp()">Sair da Conta</button>
+    <button style="margin-top: 30px; padding: 10px 20px; background: transparent; border: 1px solid #ccc; color: #666; border-radius: 6px; cursor: pointer;" onclick="sairApp()">Sair da Conta</button>
   </div>
 
+  <!-- CONTAINER DE MÓDULOS -->
   <div id="app" class="container hidden">
     
     <div class="app-header">
@@ -42,6 +51,9 @@
         <button id="btn-privacidade" class="btn-nav-top" onclick="togglePrivacidade()"></button>
     </div>
 
+    <!-- ============================================ -->
+    <!-- ABA 1: SARIPAN                               -->
+    <!-- ============================================ -->
     <div id="module-saripan" class="master-module active">
         <div class="fixed-area">
             <div class="tabs-container">
@@ -96,6 +108,9 @@
         </div>
     </div>
 
+    <!-- ============================================ -->
+    <!-- ABA 1: MODULAR                               -->
+    <!-- ============================================ -->
     <div id="module-modular" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         <div class="form-box">
             <h3 class="form-title">Registrar Renda Fixa (Modular)</h3>
@@ -107,6 +122,15 @@
                 </div>
             </div>
             
+            <div class="grid-input" style="grid-template-columns: 1fr;">
+                <div>
+                    <label style="color: #d84315; font-weight: bold;">Banco de Destino (Para Conciliação):</label>
+                    <select id="bancoModular" style="margin-bottom: 15px; padding: 12px; background: #fff3e0; border: 1px solid #ffcc80;">
+                        <option value="padrao">Aguardando Cadastro de Bancos (Aba 2)...</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="grid-input">
                 <div>
                     <label>Adiantamento (R$):</label>
@@ -115,6 +139,17 @@
                 <div>
                     <label>Salário Líquido (R$):</label>
                     <input type="number" id="valorSalario" placeholder="0.00">
+                </div>
+            </div>
+
+            <!-- NOVOS BENEFÍCIOS FIXOS -->
+            <div class="form-box" style="background: #e8f5e9; border-color: #a5d6a7; margin-top: 15px; padding: 10px;">
+                <h4 style="color: #2e7d32; margin-bottom: 10px; font-size: 13px;">Benefícios Fixos Contratuais</h4>
+                <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
+                    <div><label style="font-size: 11px;">VA:</label><input type="text" value="R$ 600,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
+                    <div><label style="font-size: 11px;">Mobilidade:</label><input type="text" value="R$ 500,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
+                    <div><label style="font-size: 11px;">Ajuda Custo:</label><input type="text" value="R$ 125,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
+                    <div><label style="font-size: 11px;">Adiant. (40%):</label><input type="text" value="Auto" readonly style="background:#c8e6c9; font-weight:bold; color: #2e7d32; text-align:center; padding: 8px;"></div>
                 </div>
             </div>
 
@@ -136,9 +171,11 @@
         <div id="lista-modular-container"></div>
     </div>
 
+    <!-- ============================================ -->
+    <!-- ABA 1: VISÃO GERAL & EXTRAS                  -->
+    <!-- ============================================ -->
     <div id="module-geral" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         
-        <!-- NOVO CAMPO: RENDA EXTRA -->
         <div class="form-box" style="border-color: #ffe0b2; background-color: #fff8e1;">
             <h3 class="form-title" style="color: #f57c00; border-bottom-color: #ffe0b2;">Registrar Renda Extra</h3>
             
@@ -166,15 +203,47 @@
         <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Entradas Extras</h3>
         <div id="lista-extra-container" style="margin-bottom: 30px;"></div>
 
-        <!-- DASHBOARD ORIGINAL -->
         <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Visão Consolidada Mensal</h3>
         <div id="dashboard-geral-content"></div>
+    </div>
 
+    <!-- ============================================ -->
+    <!-- ABA 2: BANCOS E EXTRATOS (NOVO)              -->
+    <!-- ============================================ -->
+    <div id="module-bancos" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
+        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:0;">Cadastro de Contas</h3>
+        <div class="form-box" style="text-align: center; padding: 30px;">
+            <span style="font-size: 30px;">🏦</span>
+            <p style="font-size: 14px; color: #666; margin-top: 10px;">Módulo em construção.<br>Aqui você definirá o saldo de implantação (Data de Corte).</p>
+        </div>
+        
+        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Importação de Extrato</h3>
+        <div class="form-box" style="text-align: center; padding: 30px;">
+            <span style="font-size: 30px;">📄</span>
+            <p style="font-size: 14px; color: #666; margin-top: 10px;">Em breve: Upload de arquivo OFX/CSV com conciliação automática.</p>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ABA 3: RELATÓRIOS CONSOLIDADOS (NOVO)        -->
+    <!-- ============================================ -->
+    <div id="module-relatorios" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
+        <h3 style="color:#6a1b9a; border-bottom: 2px solid #ce93d8; padding-bottom: 10px; margin-top:0;">Saldo Remanescente Total</h3>
+        <div class="form-box" style="text-align: center; border-color: #ce93d8; background: #f3e5f5;">
+            <h2 class="esconder-valor" style="color: #4a148c; font-size: 32px; margin: 10px 0;">R$ 0,00</h2>
+            <p style="font-size: 13px; color: #666;">Cálculo: Entradas Reais - Despesas do Extrato</p>
+        </div>
+
+        <h3 style="color:#6a1b9a; border-bottom: 2px solid #ce93d8; padding-bottom: 10px; margin-top:20px;">Despesas por Categoria</h3>
+        <div class="form-box" style="text-align: center; padding: 30px;">
+            <span style="font-size: 30px;">🍕</span>
+            <p style="font-size: 14px; color: #666; margin-top: 10px;">O Gráfico de Pizza detalhado aparecerá aqui.</p>
+        </div>
     </div>
 
   </div>
 
-  <!-- CONTAINER OCULTO PARA GERAR A IMAGEM EXATA DA TABELA SARIPAN -->
+  <!-- CONTAINER PRINT (INTACTO) -->
   <div id="print-container" style="position: absolute; top: -9999px; left: -9999px;">
       <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
           <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório</h1>
@@ -197,9 +266,7 @@
                       <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Valor</th>
                   </tr>
               </thead>
-              <tbody id="print-tbody">
-                  <!-- Linhas preenchidas pelo JS -->
-              </tbody>
+              <tbody id="print-tbody"></tbody>
               <tfoot>
                   <tr>
                       <td colspan="4" style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 18px; border: none;">Valor Total:</td>
