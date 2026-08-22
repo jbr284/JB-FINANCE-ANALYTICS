@@ -15,21 +15,35 @@ window.carregarTodosOsDados = async () => {
         const snapExtra = await getDocs(collection(db, "renda_extra"));
         window.registrosExtra = snapExtra.docs.map(doc => doc.data());
 
-        // Carrega Configurações (Bancos Padrão e Salário Base)
-        ['modular_salario_base', 'pref_banco_sari', 'pref_banco_mod', 'pref_banco_flash', 'pref_banco_mp'].forEach(k => {
+        // Carrega Configuração Fixa (Salário Base Modular)
+        try {
+            const confSnap = await getDoc(doc(db, "configuracoes", "modular"));
+            if (confSnap.exists() && confSnap.data().salarioBase) {
+                localStorage.setItem('modular_salario_base', confSnap.data().salarioBase);
+                const elBase = document.getElementById('valorSalarioBase');
+                if (elBase) { elBase.value = confSnap.data().salarioBase; window.atualizarPreviewModular(); }
+            }
+        } catch (errConf) { console.log(errConf); }
+
+        // Carrega Configuração do Banco Saripan
+        try {
+            const confSariSnap = await getDoc(doc(db, "configuracoes", "saripan"));
+            if (confSariSnap.exists() && confSariSnap.data().bancoPadrao) {
+                localStorage.setItem('pref_banco_sari', confSariSnap.data().bancoPadrao);
+            }
+        } catch (e) { console.log(e); }
+
+        // LocalStorage fallbacks
+        ['pref_banco_sari', 'pref_banco_mod', 'pref_banco_flash', 'pref_banco_mp'].forEach(k => {
             const val = localStorage.getItem(k);
             if(val) {
-                const mapId = {
-                    'modular_salario_base': 'valorSalarioBase', 'pref_banco_sari': 'bancoSaripan',
-                    'pref_banco_mod': 'bancoModular', 'pref_banco_flash': 'bancoFlash', 'pref_banco_mp': 'bancoMercadoPago'
-                };
+                const mapId = { 'pref_banco_sari': 'bancoSaripan', 'pref_banco_mod': 'bancoModular', 'pref_banco_flash': 'bancoFlash', 'pref_banco_mp': 'bancoMercadoPago' };
                 const el = document.getElementById(mapId[k]);
                 if (el) el.value = val;
             }
         });
         window.atualizarPreviewModular();
 
-        // GATILHO DE RENDERIZAÇÃO GERAL (Desenha tudo na tela)
         window.renderizarApontamentosSaripan(); 
         window.atualizarRodapeDinamico(); 
         window.renderizarFinanceiroSaripan();
@@ -82,12 +96,27 @@ window.limparGraficos = () => {
 };
 
 // --- MÓDULO SARIPAN ---
+// Nova Função: Salvar Banco Padrão Independente
+window.salvarBancoPadraoSaripan = async () => {
+    const bancoSari = document.getElementById('bancoSaripan')?.value || '';
+    if (!bancoSari) return alert("Por favor, selecione uma Conta ou Cartão primeiro.");
+    
+    localStorage.setItem('pref_banco_sari', bancoSari);
+    
+    try {
+        await setDoc(doc(db, "configuracoes", "saripan"), { bancoPadrao: bancoSari }, { merge: true });
+        window.mostrarToast("Banco Padrão do Saripan salvo com sucesso!");
+    } catch(e) {
+        console.error(e);
+        window.mostrarToast("Salvo apenas na memória do dispositivo.");
+    }
+};
+
 window.adicionarRegistro = async () => {
     const d = document.getElementById('dataServico').value;
     if (!d) return alert("Data inválida!");
     
     const bancoSari = document.getElementById('bancoSaripan') ? document.getElementById('bancoSaripan').value : '';
-    if(bancoSari) localStorage.setItem('pref_banco_sari', bancoSari);
     
     const base = parseFloat(document.getElementById('valorBase').value);
     const carga = parseInt(document.getElementById('tipoCarga').value);
@@ -226,7 +255,6 @@ window.compartilharRelatorio = async (chaveGrupo) => {
 };
 
 window.renderizarFinanceiroSaripan = () => {
-    // Limpa apenas os gráficos associados ao Saripan para evitar bugs na Aba Geral
     const container = document.getElementById('financeiro-content');
     if(!container) return;
     
