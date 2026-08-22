@@ -3,6 +3,7 @@ import { auth } from './modulos/firebase-config.js';
 import './modulos/ui.js';       // Carrega UI e variáveis globais
 import './modulos/receitas.js'; // Carrega as regras de negócio das receitas
 import './modulos/bancos.js';   // Carrega a lógica de cadastro de contas
+import './modulos/extratos.js'; // Carrega o robô de leitura de CSV
 import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // Controle de Autenticação Global
@@ -37,9 +38,13 @@ auth.onAuthStateChanged((user) => {
             window.carregarTodosOsDados();
         }
         
-        // Dispara o carregamento dos Bancos (Novo)
+        // Dispara o carregamento dos Bancos
         if (window.carregarBancos) {
             window.carregarBancos();
+            // Atraso sútil para garantir que a lista carregou antes de popular os selects
+            setTimeout(() => {
+                if (window.atualizarSelectBancosUpload) window.atualizarSelectBancosUpload();
+            }, 500);
         }
     } else {
         document.getElementById('tela-login').classList.remove('hidden');
@@ -60,6 +65,9 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById(id)?.addEventListener('input', window.atualizarPreview);
     });
     if (window.atualizarPreview) window.atualizarPreview();
+
+    // Novo Listener da Modular (Para atualizar os 40% auto)
+    document.getElementById('valorSalarioBase')?.addEventListener('input', window.atualizarPreviewModular);
     
     // Service Worker PWA
     if ('serviceWorker' in navigator) {
