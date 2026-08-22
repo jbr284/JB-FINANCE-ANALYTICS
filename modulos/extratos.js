@@ -12,7 +12,7 @@ const CATEGORIAS_PADRAO = [
     "Educação"
 ];
 
-// O Robô de Processamento Profissional com Papa Parse
+// O Robô de Processamento Profissional para o Bradesco Real
 window.processarCSV = () => {
     const bancoSelecionado = document.getElementById('bancoExtratoUpload').value;
     const fileInput = document.getElementById('arquivoCSV');
@@ -26,7 +26,7 @@ window.processarCSV = () => {
         encoding: "ISO-8859-1", 
         skipEmptyLines: true,
         complete: function(results) {
-            analisarDadosPapaParse(results.data, bancoSelecionado);
+            analisarDadosBradescoReal(results.data, bancoSelecionado);
         },
         error: function(err) {
             alert("Erro ao ler o arquivo: " + err);
@@ -34,99 +34,79 @@ window.processarCSV = () => {
     });
 };
 
-function analisarDadosPapaParse(linhasArray, idBanco) {
+function analisarDadosBradescoReal(linhasArray, idBanco) {
     let transacoesExtraidas = [];
+    let dadosIniciaram = false;
 
-    // Função de limpeza matemática otimizada para o padrão Bradesco
-    const parseValor = (val) => {
-        if (!val || typeof val !== 'string') return NaN;
+    // Função de limpeza de valores monetários do Bradesco (ex: "- 16,74" ou "0,01")
+    const parseValorBradesco = (val) => {
+        if (!val || typeof val !== 'string') return 0;
         let str = val.replace(/R\$/g, '').trim();
-        if (str === "" || str === "-" || str === "0,00" || str === "0.00") return NaN;
+        if (str === "" || str === "-" || str === "0,00" || str === "0.00") return 0;
         
-        if (str.includes(',') && str.includes('.')) {
-            str = str.replace(/\./g, '').replace(',', '.');
-        } else if (str.includes(',')) {
-            str = str.replace(',', '.');
-        }
-        return parseFloat(str);
+        // Remove pontos de milhares e troca vírgula por ponto
+        str = str.replace(/\./g, '').replace(',', '.');
+        return parseFloat(str) || 0;
     };
 
     for (let i = 0; i < linhasArray.length; i++) {
         const colunas = linhasArray[i];
         
-        // Procura por qualquer coluna que tenha uma data no formato DD/MM ou DD/MM/AA(AA)
-        let dataStr = null;
-        let colDataIndex = -1;
-        
-        for (let c = 0; c < colunas.length; c++) {
-            let val = colunas[c] ? colunas[c].trim() : "";
-            if (val.match(/^\d{2}\/\d{2}(\/\d{2,4})?/)) {
-                dataStr = val;
-                colDataIndex = c;
-                break;
+        // 1. Procura a linha de cabeçalho para saber onde começam os dados
+        if (!dadosIniciaram) {
+            const linhaStr = colunas.join(' ').toUpperCase();
+            if (linhaStr.includes('DATA') && (linhaStr.includes('HISTORICO') || linhaStr.includes('CREDITO'))) {
+                dadosIniciaram = true;
             }
+            continue;
         }
 
-        // Se encontrou uma data, esta é uma linha de transação potencial!
-        if (dataStr && colDataIndex !== -1) {
-            let desc = "Sem descrição";
-            let valFinal = 0;
-
-            // Ignora linhas de saldo ou totais
-            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO')) continue;
-
-            // Pega a descrição (geralmente logo após a data)
-            if (colunas.length > colDataIndex + 1) {
-                for (let d = colDataIndex + 1; d < colunas.length; d++) {
-                    let textoCandidato = colunas[d] ? colunas[d].trim() : "";
-                    if (textoCandidato !== "" && isNaN(parseValor(textoCandidato))) {
-                        desc = textoCandidato;
-                        break;
+        // 2. Processa as linhas de dados (Validando se a primeira coluna é uma data DD/MM/YY)
+        if (dadosIniciaram && colunas.length >= 5) {
+            let dataStr = colunas[0] ? colunas[0].trim() : "";
+            
+            // Se começar com data válida
+            if (dataStr.match(/^\d{2}\/\d{2}\/\d{2}/)) {
+                let historico = colunas[1] ? colunas[1].trim() : "Sem descrição";
+                
+                // Se houver uma linha logo abaixo com complemento (ex: "Mercado Villa"), junta à descrição
+                if (i + 1 < linhasArray.length) {
+                    let proximaLinha = linhasArray[i + 1];
+                    // Se a próxima linha NÃO começa com data, é a continuação do histórico
+                    if (proximaLinha[0] && !proximaLinha[0].match(/^\d{2}\/\d{2}\/\d{2}/)) {
+                        let complemento = proximaLinha[1] || proximaLinha[0];
+                        if (complemento && complemento.trim() !== "") {
+                            historico += " - " + complemento.trim();
+                        }
                     }
                 }
-            }
 
-            // Varre todas as colunas à procura de valores monetários válidos
-            // No Bradesco, as colunas de Crédito e Débito ficam mais à direita
-            let valoresEncontrados = [];
-            for (let j = 0; j < colunas.length; j++) {
-                if (j === colDataIndex) continue;
-                let num = parseValor(colunas[j]);
-                if (!isNaN(num) && num !== 0) {
-                    valoresEncontrados.push({ index: j, valor: num });
-                }
-            }
+                // Estrutura fixa do Bradesco:
+                // Coluna 3 = Crédito (R$)
+                // Coluna 4 = Débito (R$)
+                let valCredito = parseValorBradesco(colunas[3]);
+                let valDebito = parseValorBradesco(colunas[4]);
 
-            if (valoresEncontrados.length > 0) {
-                // No Bradesco, se houver duas colunas de valores preenchidas na mesma linha (uma crédito, outra débito), 
-                // geralmente a mais à esquerda é crédito e a outra débito, ou temos uma indicação explícita.
-                // Vamos pegar o último valor numérico válido antes do saldo (o saldo costuma ser a última coluna).
-                let transacaoValida = null;
-                
-                // Se tivermos mais de um valor (ex: Crédito/Débito e Saldo acumulado)
-                // O valor da transação é o penúltimo ou o que não for saldo.
-                if (valoresEncontrados.length >= 2) {
-                    // Pega o valor que não é o saldo final da conta (vamos assumir o penúltimo se houver 2 ou mais)
-                    transacaoValida = valoresEncontrados[valoresEncontrados.length - 2].valor;
-                } else {
-                    transacaoValida = valoresEncontrados[0].valor;
+                let valorFinal = 0;
+                let tipoTransacao = "credito";
+
+                if (valCredito > 0) {
+                    valorFinal = valCredito;
+                    tipoTransacao = "credito";
+                } else if (valDebito !== 0) {
+                    valorFinal = -Math.abs(valDebito); // Garante que débito seja negativo
+                    tipoTransacao = "debito";
                 }
 
-                // Identifica se é débito ou crédito olhando o texto da linha ou o sinal
-                let linhaCompletaTexto = colunas.join(' ').toUpperCase();
-                if (linhaCompletaTexto.includes('DEBITO') || linhaCompletaTexto.includes('PAGTO') || linhaCompletaTexto.includes('COMPRA') || linhaCompletaTexto.includes('PIX QRS') || linhaCompletaTexto.includes('SAQUE')) {
-                    valFinal = -Math.abs(transacaoValida);
-                } else {
-                    valFinal = transacaoValida; // Mantém positivo se for entrada
+                if (valorFinal !== 0) {
+                    transacoesExtraidas.push({
+                        data: dataStr,
+                        descricao: historico,
+                        valor: valorFinal,
+                        tipo: tipoTransacao,
+                        idBanco: idBanco
+                    });
                 }
-
-                transacoesExtraidas.push({
-                    data: dataStr,
-                    descricao: desc,
-                    valor: valFinal,
-                    tipo: valFinal < 0 ? 'debito' : 'credito',
-                    idBanco: idBanco
-                });
             }
         }
     }
@@ -172,7 +152,7 @@ function renderizarTabelaConciliacao(transacoes) {
         html += `
             <tr style="border-bottom: 1px solid #eceff1;">
                 <td style="padding: 10px 5px; color: #455a64; white-space: nowrap;">${t.data}</td>
-                <td style="padding: 10px 5px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #37474f;" title="${t.descricao}">
+                <td style="padding: 10px 5px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #37474f;" title="${t.descricao}">
                     ${t.descricao}
                 </td>
                 <td style="padding: 10px 5px; text-align:right; font-weight: bold; color: ${corValor}; white-space: nowrap;">
@@ -193,7 +173,7 @@ function renderizarTabelaConciliacao(transacoes) {
     `;
 
     container.innerHTML = html;
-    window.mostrarToast(`Sucesso! ${transacoes.length} transações carregadas.`);
+    window.mostrarToast(`Sucesso! ${transacoes.length} transações do Bradesco carregadas perfeitamente.`);
 }
 
 window.atualizarSelectBancosUpload = () => {
