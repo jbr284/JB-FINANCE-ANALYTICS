@@ -224,9 +224,6 @@ window.salvarEConciliarExtrato = async () => {
                 <p style="font-size: 13px; color: #555;">As despesas e entradas foram gravadas no seu ERP e já estão prontas para alimentar os relatórios financeiros.</p>
             </div>
         `;
-
-    }armazemValido => {
-        // catch error block handled cleanly below
     } catch (e) {
         console.error("Erro ao salvar no Firebase:", e);
         alert("Ocorreu um erro ao salvar as transações. Verifique a consola.");
