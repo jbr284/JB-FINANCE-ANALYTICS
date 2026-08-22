@@ -41,7 +41,6 @@ auth.onAuthStateChanged((user) => {
         // Dispara o carregamento dos Bancos
         if (window.carregarBancos) {
             window.carregarBancos();
-            // Atraso sútil para garantir que a lista carregou antes de popular os selects
             setTimeout(() => {
                 if (window.atualizarSelectBancosUpload) window.atualizarSelectBancosUpload();
             }, 500);
@@ -60,13 +59,21 @@ window.addEventListener('DOMContentLoaded', () => {
     
     if (window.definirDatasAtuais) window.definirDatasAtuais();
     
+    // Pré-carrega Salário Base da memória imediatamente
+    const baseSalva = localStorage.getItem('modular_salario_base');
+    if (baseSalva) {
+        const elBase = document.getElementById('valorSalarioBase');
+        if (elBase) elBase.value = baseSalva;
+        if (window.atualizarPreviewModular) window.atualizarPreviewModular();
+    }
+
     // Listeners do Saripan
     ['valorBase', 'tipoCarga', 'tipoDia'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', window.atualizarPreview);
     });
     if (window.atualizarPreview) window.atualizarPreview();
 
-    // Novo Listener da Modular (Para atualizar os 40% auto)
+    // Listener da Modular (Para atualizar os 40% auto)
     document.getElementById('valorSalarioBase')?.addEventListener('input', window.atualizarPreviewModular);
     
     // Service Worker PWA
