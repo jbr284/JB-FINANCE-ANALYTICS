@@ -14,22 +14,23 @@ const CATEGORIAS_PADRAO = [
     "Educação"
 ];
 
+// Variáveis globais para armazenar os dados exatos na memória
 window.transacoesExtratoAtual = [];
 window.listaLancamentosExtratos = [];
 window.chartPizzaInstance = null;
 
-// Carrega os lançamentos salvos do Firestore
+// Carrega os lançamentos salvos do Firestore para a Aba 3
 window.carregarLancamentosExtratos = async () => {
     try {
         const snap = await getDocs(collection(db, "extratos_lancamentos"));
         window.listaLancamentosExtratos = snap.docs.map(d => d.data());
-        window.renderizarRelatoriosConsolidados();
+        if (window.renderizarRelatoriosConsolidados) window.renderizarRelatoriosConsolidados();
     } catch (e) {
         console.error("Erro ao carregar extratos_lancamentos:", e);
     }
 };
 
-// O Robô de Processamento Profissional para o Bradesco Real
+// O Robô de Processamento Profissional
 window.processarCSV = () => {
     const bancoSelecionado = document.getElementById('bancoExtratoUpload').value;
     const fileInput = document.getElementById('arquivoCSV');
@@ -113,7 +114,7 @@ function analisarDadosBradescoReal(linhasArray, idBanco) {
                 transacoesExtraidas.push({
                     data: dataStr,
                     descricao: historico,
-                    valor: valorFinal,
+                    valor: valorFinal, // O número real puro e correto!
                     tipo: tipoTransacao,
                     categoriaSugerida: categoriaSugerida,
                     idBanco: idBanco
@@ -122,6 +123,7 @@ function analisarDadosBradescoReal(linhasArray, idBanco) {
         }
     }
 
+    // Salva na memória do sistema para usarmos na hora de gravar no Firebase
     window.transacoesExtratoAtual = transacoesExtraidas;
     renderizarTabelaConciliacao(transacoesExtraidas);
 }
@@ -136,7 +138,7 @@ function renderizarTabelaConciliacao(transacoes) {
 
     let html = `
         <h4 style="color:#002f6c; margin-bottom: 10px; margin-top: 20px;">Pré-visualização do Extrato (${transacoes.length} transações encontradas)</h4>
-        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Os <b>Créditos</b> são entradas. Classifique as suas <b>Despesas (Débitos)</b> abaixo e clique em salvar.</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Os <b>Créditos</b> são entradas. Classifique as suas <b>Despesas (Débitos)</b> abaixo.</p>
         <div style="background: white; border: 1px solid #cfd8dc; border-radius: 8px; overflow-x: auto; max-height: 400px;">
         <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
             <thead>
@@ -188,7 +190,7 @@ function renderizarTabelaConciliacao(transacoes) {
     window.mostrarToast(`Sucesso! ${transacoes.length} transações prontas para salvar.`);
 }
 
-// Grava no Firebase usando o valor float exato da memória
+// A Função Real de Gravação no Firebase (Lê da memória e não da tela!)
 window.salvarEConciliarExtrato = async () => {
     const bancoId = document.getElementById('bancoExtratoUpload').value;
     if (!bancoId) return alert("Selecione a conta bancária de origem.");
@@ -201,16 +203,22 @@ window.salvarEConciliarExtrato = async () => {
 
     window.mostrarToast("Salvando transações no Firebase...");
 
-    const selects = document.querySelectorAll('#tabela-conciliacao-container tbody select.select-categoria');
+    // Pega as linhas da tabela apenas para descobrir qual categoria o utilizador escolheu
+    const linhasTabela = document.querySelectorAll('#tabela-conciliacao-container tbody tr');
 
     try {
-        let debitoCount = 0;
         for (let i = 0; i < window.transacoesExtratoAtual.length; i++) {
             const t = window.transacoesExtratoAtual[i];
-            let catFinal = 'Entrada';
+            
+            let categoriaFinal = 'Entrada';
+            
             if (t.tipo === 'debito') {
-                catFinal = selects[debitoCount] ? selects[debitoCount].value : t.categoriaSugerida;
-                debitoCount++;
+                if (linhasTabela[i]) {
+                    const selectCat = linhasTabela[i].querySelector('.select-categoria');
+                    if (selectCat) categoriaFinal = selectCat.value;
+                } else {
+                    categoriaFinal = t.categoriaSugerida || 'Outros';
+                }
             }
 
             const idTransacao = `TRANS-${Date.now()}-${i}`;
@@ -219,9 +227,9 @@ window.salvarEConciliarExtrato = async () => {
                 idBanco: bancoId,
                 data: t.data,
                 descricao: t.descricao,
-                valor: t.valor, // Float exato (ex: -16.74, 0.01)
+                valor: t.valor, // Puxa o float perfeito gravado na memória (-15.01)
                 tipo: t.tipo,
-                categoria: catFinal,
+                categoria: categoriaFinal,
                 timestamp: Date.now()
             };
 
@@ -236,11 +244,13 @@ window.salvarEConciliarExtrato = async () => {
             </div>
         `;
 
-        await window.carregarLancamentosExtratos();
+        if (window.carregarLancamentosExtratos) {
+            await window.carregarLancamentosExtratos();
+        }
 
     } catch (e) {
         console.error("Erro ao salvar no Firebase:", e);
-        alert("Ocorreu um erro ao salvar as transações.");
+        alert("Ocorreu um erro ao salvar as transações. Verifique a consola.");
     }
 };
 
