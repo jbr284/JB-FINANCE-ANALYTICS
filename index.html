@@ -24,19 +24,41 @@
     <button class="btn-action btn-green" onclick="fazerLogin()" style="max-width: 300px;">Entrar</button>
   </div>
 
-  <!-- TELA HUB (MENU PRINCIPAL) -->
+  <!-- TELA HUB (MENU PRINCIPAL COM SANFONAS) -->
   <div id="tela-hub" class="container-center hidden">
-    <h2 style="color:#002f6c; margin-bottom: 10px;">JB Finance Analytics</h2>
+    <h2 style="color:#002f6c; margin-bottom: 20px;">JB Finance Analytics</h2>
     
-    <div style="width: 100%; max-width: 300px; margin: 0 auto; text-align: left;">
-        <h3 style="color:#f57c00; font-size: 13px; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">ABA 1: REMUNERAÇÕES</h3>
-        <button class="btn-big" style="background:#43a047; margin-bottom: 10px;" onclick="abrirModulo('saripan')">🏢 Módulo SARIPAN</button>
-        <button class="btn-big" style="background:#1565c0; margin-bottom: 10px;" onclick="abrirModulo('modular')">🏭 Módulo MODULAR</button>
-        <button class="btn-big" style="background:#f57c00; margin-bottom: 25px;" onclick="abrirModulo('geral')">📊 VISÃO GERAL (Entradas)</button>
+    <div style="width: 100%; max-width: 320px; margin: 0 auto; text-align: left;">
+        
+        <!-- SANFONA 1: REMUNERAÇÕES -->
+        <div class="accordion-group">
+            <div class="accordion-header active" onclick="this.classList.toggle('active'); this.nextElementSibling.classList.toggle('open');" style="border-left: 5px solid #f57c00;">
+                <div style="width: 100%;">
+                    <div class="accordion-title" style="color: #f57c00; font-size: 14px;">ABA 1: REMUNERAÇÕES</div>
+                </div>
+                <div style="color: #f57c00;">▼</div>
+            </div>
+            <div class="accordion-content open" style="padding: 15px 5px 5px 5px;">
+                <button class="btn-big" style="background:#43a047; margin-bottom: 10px;" onclick="abrirModulo('saripan')">🏢 Módulo SARIPAN</button>
+                <button class="btn-big" style="background:#1565c0; margin-bottom: 10px;" onclick="abrirModulo('modular')">🏭 Módulo MODULAR</button>
+                <button class="btn-big" style="background:#f57c00; margin-bottom: 5px;" onclick="abrirModulo('geral')">📊 VISÃO GERAL (Entradas)</button>
+            </div>
+        </div>
 
-        <h3 style="color:#002f6c; font-size: 13px; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">ABA 2 & 3: GESTÃO FINANCEIRA</h3>
-        <button class="btn-big" style="background:#455a64; margin-bottom: 10px;" onclick="abrirModulo('bancos')">🏦 Bancos e Extratos</button>
-        <button class="btn-big" style="background:#6a1b9a; margin-bottom: 10px;" onclick="abrirModulo('relatorios')">📈 Relatórios Consolidados</button>
+        <!-- SANFONA 2: GESTÃO FINANCEIRA -->
+        <div class="accordion-group" style="margin-top: 15px;">
+            <div class="accordion-header" onclick="this.classList.toggle('active'); this.nextElementSibling.classList.toggle('open');" style="border-left: 5px solid #455a64;">
+                <div style="width: 100%;">
+                    <div class="accordion-title" style="color: #455a64; font-size: 14px;">ABA 2 & 3: GESTÃO FINANCEIRA</div>
+                </div>
+                <div style="color: #455a64;">▼</div>
+            </div>
+            <div class="accordion-content" style="padding: 15px 5px 5px 5px;">
+                <button class="btn-big" style="background:#455a64; margin-bottom: 10px;" onclick="abrirModulo('bancos')">🏦 Bancos e Extratos</button>
+                <button class="btn-big" style="background:#6a1b9a; margin-bottom: 5px;" onclick="abrirModulo('relatorios')">📈 Relatórios Consolidados</button>
+            </div>
+        </div>
+
     </div>
     
     <button style="margin-top: 30px; padding: 10px 20px; background: transparent; border: 1px solid #ccc; color: #666; border-radius: 6px; cursor: pointer;" onclick="sairApp()">Sair da Conta</button>
@@ -213,12 +235,12 @@
         
         <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:0;">Cadastro de Contas (Data de Corte)</h3>
         <div class="form-box">
-            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Cadastre os seus bancos e informe qual era o saldo real na data de implantação do sistema (ex: 01/08).</p>
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Cadastre os seus bancos e informe qual era o saldo real na data de implantação do sistema.</p>
             
             <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
                 <div>
-                    <label>Nome do Banco / Carteira:</label>
-                    <input type="text" id="nomeBanco" placeholder="Ex: Itaú, Nubank, Dinheiro Vivo" style="border: 1px solid #90a4ae;">
+                    <label>Nome do Banco:</label>
+                    <input type="text" id="nomeBanco" placeholder="Ex: Itaú, Nubank" style="border: 1px solid #90a4ae;">
                 </div>
                 <div>
                     <label>Saldo Inicial (R$):</label>
@@ -234,11 +256,21 @@
             <!-- A tabela de bancos será injetada aqui -->
         </div>
 
-        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Importação de Extrato (CSV/OFX)</h3>
-        <div class="form-box" style="text-align: center; padding: 30px; opacity: 0.6;">
-            <span style="font-size: 30px;">📄</span>
-            <p style="font-size: 14px; color: #666; margin-top: 10px;">O robô de leitura de extratos será ativado na próxima etapa.</p>
+        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Importação de Extrato</h3>
+        <div class="form-box" style="border-color: #455a64; background-color: #eceff1;">
+            <label>1. Selecione a Conta Bancária:</label>
+            <select id="bancoExtratoUpload" style="margin-bottom: 15px; border: 1px solid #90a4ae;">
+                <option value="">Aguardando bancos...</option>
+            </select>
+            
+            <label>2. Envie o arquivo CSV do Banco:</label>
+            <input type="file" id="arquivoCSV" accept=".csv" style="margin-bottom: 15px; width: 100%; padding: 10px; background: white; border: 1px solid #90a4ae; border-radius: 4px;">
+            
+            <button class="btn-action" style="background-color: #002f6c;" onclick="processarCSV()">⚙️ Ler e Processar Extrato</button>
         </div>
+
+        <!-- Onde a mágica da categorização vai acontecer -->
+        <div id="tabela-conciliacao-container" style="margin-top: 20px;"></div>
     </div>
 
     <!-- ============================================ -->
