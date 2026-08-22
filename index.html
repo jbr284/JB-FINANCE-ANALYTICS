@@ -87,6 +87,15 @@
 
         <div class="scroll-content">
             <div id="painel-registrar" class="panel active">
+              
+              <!-- CONFIGURAÇÃO DO BANCO SARIPAN -->
+              <div class="form-box" style="margin-bottom: 15px; border-color: #81c784; background: #e8f5e9; padding: 10px;">
+                  <label style="color: #2e7d32; font-size: 12px; font-weight: bold;">Banco Padrão de Recebimento (Saripan):</label>
+                  <select id="bancoSaripan" style="width: 100%; padding: 8px; border: 1px solid #a5d6a7; border-radius: 4px; margin-top: 5px;">
+                      <option value="">Aguardando Bancos...</option>
+                  </select>
+              </div>
+
               <div class="form-box">
                 <h3 class="form-title">Novo Apontamento</h3>
                 <label>Data do Serviço:</label>
@@ -135,7 +144,7 @@
     <!-- ============================================ -->
     <div id="module-modular" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         <div class="form-box">
-            <h3 class="form-title">Registrar Renda Fixa (Modular)</h3>
+            <h3 class="form-title">Registrar Remuneração (Modular)</h3>
             
             <div class="grid-input" style="grid-template-columns: 1fr;">
                 <div>
@@ -146,50 +155,61 @@
             
             <div class="grid-input" style="grid-template-columns: 1fr;">
                 <div>
-                    <label style="color: #d84315; font-weight: bold;">Banco de Destino (Para Conciliação):</label>
-                    <select id="bancoModular" style="margin-bottom: 15px; padding: 12px; background: #fff3e0; border: 1px solid #ffcc80;">
-                        <option value="padrao">Aguardando Cadastro de Bancos...</option>
+                    <label style="color: #0d47a1; font-weight: bold;">Banco Destino (Salário):</label>
+                    <select id="bancoModular" style="margin-bottom: 15px; padding: 12px; background: #e3f2fd; border: 1px solid #90caf9;">
+                        <option value="">Aguardando Bancos...</option>
                     </select>
                 </div>
             </div>
 
-            <!-- NOVA LÓGICA DO SALÁRIO BASE -->
             <div class="grid-input">
                 <div>
                     <label>Salário Base (R$):</label>
                     <input type="number" id="valorSalarioBase" placeholder="0.00">
                 </div>
                 <div>
-                    <label>Salário Líquido Recebido (R$):</label>
+                    <label>Salário Líquido (30 do mês):</label>
                     <input type="number" id="valorSalario" placeholder="0.00">
+                </div>
+            </div>
+
+            <div class="grid-input" style="margin-top: 10px;">
+                <div>
+                    <label>Nome do Extra (Opcional):</label>
+                    <input type="text" id="nomeOutras" placeholder="Ex: PLR, Prêmio">
+                </div>
+                <div>
+                    <label>Valor do Extra (R$):</label>
+                    <input type="number" id="valorOutras" placeholder="0.00">
                 </div>
             </div>
 
             <div class="form-box" style="background: #e8f5e9; border-color: #a5d6a7; margin-top: 15px; padding: 10px;">
                 <h4 style="color: #2e7d32; margin-bottom: 10px; font-size: 13px;">Benefícios Fixos Contratuais</h4>
-                <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
-                    <div><label style="font-size: 11px;">VA:</label><input type="text" value="R$ 600,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
-                    <div><label style="font-size: 11px;">Mobilidade:</label><input type="text" value="R$ 500,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
-                    <div><label style="font-size: 11px;">Ajuda Custo:</label><input type="text" value="R$ 125,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
-                    <div><label style="font-size: 11px;">Adiant. (40%):</label><input type="text" id="previewAdiantamento" value="R$ 0,00" readonly style="background:#c8e6c9; font-weight:bold; color: #2e7d32; text-align:center; padding: 8px;"></div>
+                
+                <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #a5d6a7;">
+                    <label style="font-size: 11px; color: #1b5e20;">Destino VA e Mobilidade (Ex: Flash):</label>
+                    <select id="bancoFlash" style="width:100%; padding: 5px; font-size: 12px; margin-bottom: 5px;"><option value="">Aguardando...</option></select>
+                    <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
+                        <div><label style="font-size: 11px;">VA:</label><input type="text" value="R$ 600,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
+                        <div><label style="font-size: 11px;">Mobilidade:</label><input type="text" value="R$ 500,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 11px; color: #1b5e20;">Destino Ajuda de Custo (Ex: Mercado Pago):</label>
+                    <select id="bancoMercadoPago" style="width:100%; padding: 5px; font-size: 12px; margin-bottom: 5px;"><option value="">Aguardando...</option></select>
+                    <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
+                        <div><label style="font-size: 11px;">Ajuda Custo:</label><input type="text" value="R$ 125,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
+                        <div><label style="font-size: 11px; color: #2e7d32;">Adiant. Calculado (40%):</label><input type="text" id="previewAdiantamento" value="R$ 0,00" readonly style="background:#a5d6a7; font-weight:bold; color: #1b5e20; text-align:center; padding: 8px;"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="grid-input" style="margin-top: 10px; border-top: 1px dashed #bbdefb; padding-top: 15px;">
-                <div>
-                    <label>Nome do Extra (Opcional):</label>
-                    <input type="text" id="nomeOutras" placeholder="Ex: PLR, Prêmio, Férias">
-                </div>
-                <div>
-                    <label>Valor do Extra (R$):</label>
-                    <input type="number" id="valorOutras" placeholder="0.00" style="border: 1px solid #1565c0; background: #fff;">
-                </div>
-            </div>
-
-            <button class="btn-action btn-green" id="btn-salvar-modular" onclick="adicionarRegistroModular()">💾 Salvar Mês</button>
+            <button class="btn-action btn-green" id="btn-salvar-modular" onclick="adicionarRegistroModular()">💾 Salvar Mês Completo</button>
         </div>
 
-        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Modular</h3>
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Modular (Salário Real)</h3>
         <div id="lista-modular-container"></div>
     </div>
 
@@ -199,7 +219,7 @@
     <div id="module-geral" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         
         <div class="form-box" style="border-color: #ffe0b2; background-color: #fff8e1;">
-            <h3 class="form-title" style="color: #f57c00; border-bottom-color: #ffe0b2;">Registrar Renda Extra</h3>
+            <h3 class="form-title" style="color: #f57c00; border-bottom-color: #ffe0b2;">Registrar Renda Extra (Bicos)</h3>
             
             <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
                 <div>
@@ -215,11 +235,17 @@
             <div class="grid-input" style="grid-template-columns: 1fr;">
                 <div>
                     <label>Identificação / Descrição:</label>
-                    <input type="text" id="descExtra" placeholder="Ex: Freelance, Venda avulsa, Serviço extra..." style="border: 1px solid #ffcc80;">
+                    <input type="text" id="descExtra" placeholder="Ex: Freelance, Venda avulsa..." style="border: 1px solid #ffcc80; margin-bottom: 10px;">
+                </div>
+                <div>
+                    <label style="color: #e65100; font-weight: bold;">Banco de Destino (Onde caiu?):</label>
+                    <select id="bancoExtra" style="padding: 10px; background: #fff; border: 1px solid #ffcc80;">
+                        <option value="">Aguardando Bancos...</option>
+                    </select>
                 </div>
             </div>
 
-            <button class="btn-action" style="background-color: #f57c00;" id="btn-salvar-extra" onclick="adicionarRegistroExtra()">➕ Adicionar Renda Extra</button>
+            <button class="btn-action" style="background-color: #f57c00; margin-top: 15px;" onclick="adicionarRegistroExtra()">➕ Adicionar Renda Extra</button>
         </div>
 
         <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Entradas Extras</h3>
@@ -234,14 +260,14 @@
     <!-- ============================================ -->
     <div id="module-bancos" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         
-        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:0;">Cadastro de Contas (Data de Corte)</h3>
+        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:0;">Cadastro de Contas e Cartões</h3>
         <div class="form-box">
-            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Cadastre os seus bancos e informe qual era o saldo real na data de implantação do sistema.</p>
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Cadastre aqui contas correntes e cartões de benefícios (Ex: Flash, Mercado Pago).</p>
             
             <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
                 <div>
-                    <label>Nome do Banco:</label>
-                    <input type="text" id="nomeBanco" placeholder="Ex: Itaú, Nubank" style="border: 1px solid #90a4ae;">
+                    <label>Nome do Banco / Cartão:</label>
+                    <input type="text" id="nomeBanco" placeholder="Ex: Itaú, Flash" style="border: 1px solid #90a4ae;">
                 </div>
                 <div>
                     <label>Saldo Inicial (R$):</label>
@@ -249,10 +275,10 @@
                 </div>
             </div>
             
-            <button class="btn-action" style="background-color: #455a64;" onclick="adicionarBanco()">🏦 Cadastrar Banco</button>
+            <button class="btn-action" style="background-color: #455a64;" onclick="adicionarBanco()">🏦 Cadastrar Conta</button>
         </div>
 
-        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Bancos Cadastrados</h3>
+        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Contas Cadastradas</h3>
         <div id="lista-bancos-container" style="margin-bottom: 30px;">
             <!-- A tabela de bancos será injetada aqui -->
         </div>
@@ -270,7 +296,6 @@
             <button class="btn-action" style="background-color: #002f6c;" onclick="processarCSV()">⚙️ Ler e Processar Extrato</button>
         </div>
 
-        <!-- Onde a mágica da categorização vai acontecer -->
         <div id="tabela-conciliacao-container" style="margin-top: 20px;"></div>
     </div>
 
@@ -295,36 +320,7 @@
 
   <!-- CONTAINER PRINT -->
   <div id="print-container" style="position: absolute; top: -9999px; left: -9999px;">
-      <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
-          <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório</h1>
-          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
-              <div>Prestador: João Batista Rosa</div>
-              <div id="print-ref">Referência: --</div>
-          </div>
-          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 30px;">
-              <div style="font-weight: bold;">Resumo do Período:</div>
-              <div id="print-resumo"></div>
-              <div style="font-weight: bold; margin-top: 15px; font-size: 20px;" id="print-total-diarias">Total: -- diárias a receber</div>
-          </div>
-          <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
-              <thead>
-                  <tr style="background-color: #00AEEF; color: #000;">
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Data</th>
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Dia</th>
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Tipo</th>
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Detalhes</th>
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Valor</th>
-                  </tr>
-              </thead>
-              <tbody id="print-tbody"></tbody>
-              <tfoot>
-                  <tr>
-                      <td colspan="4" style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 18px; border: none;">Valor Total:</td>
-                      <td style="padding: 15px 12px; font-weight: bold; font-size: 18px; border: none; text-align: left;" id="print-valor-total">R$ 0.00</td>
-                  </tr>
-              </tfoot>
-          </table>
-      </div>
+      <!-- (Omitido para manter curto, mantenha o seu print-container intacto) -->
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
