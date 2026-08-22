@@ -34,46 +34,84 @@ window.processarCSV = () => {
         analisarLinhasCSV(text, bancoSelecionado);
     };
 
-    // Manda o navegador ler o arquivo como texto
-    reader.readAsText(file);
+    // Lê o arquivo (O Bradesco usa codificação Latin1/ISO-8859-1 que pode quebrar acentos, o navegador tenta ajustar)
+    reader.readAsText(file, 'ISO-8859-1');
 };
 
-// O Cérebro Analítico (Parse do CSV)
+// O Novo Cérebro Analítico (Robô Universal Bradesco/Itaú/Nubank)
 function analisarLinhasCSV(textoCSV, idBanco) {
-    // Separa o texto por quebras de linha
     const linhas = textoCSV.split('\n');
     let transacoesExtraidas = [];
+    
+    let indexData = -1, indexDesc = -1, indexValor = -1, indexCredito = -1, indexDebito = -1;
+    let dadosIniciaram = false;
 
-    // Ignora o cabeçalho (geralmente a linha 0) e lê o resto
-    for (let i = 1; i < linhas.length; i++) {
-        const linha = linhas[i].trim();
+    for (let i = 0; i < linhas.length; i++) {
+        let linha = linhas[i].trim();
         if (!linha) continue;
 
-        // Tenta separar as colunas por vírgula ou ponto-e-vírgula (Padrão Bradesco/Itaú/Nubank)
-        const colunas = linha.split(/,|;/);
+        // Separa por ponto-e-vírgula ou vírgula e limpa aspas duplas
+        const colunas = linha.split(/;|,/).map(c => c.replace(/"/g, '').trim());
         
-        if (colunas.length >= 3) {
-            const dataStr = colunas[0].replace(/"/g, ''); // Tira aspas se tiver
-            const descricao = colunas[1].replace(/"/g, '');
+        // 1. FASE DE MAPEAMENTO: Procura onde a tabela real começa
+        if (!dadosIniciaram) {
+            // Converte para maiúsculas para facilitar a busca (ignorando acentos)
+            const linhaUpper = colunas.map(c => c.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
             
-            // Tratamento pesado para números (Tira aspas, ajusta virgula para ponto)
-            let valorCru = colunas[colunas.length - 1].replace(/"/g, '').trim();
-            valorCru = valorCru.replace('R$', '').trim();
-            // Se o padrão for brasileiro (1.000,00) converte para (1000.00)
-            if (valorCru.includes(',') && valorCru.includes('.')) {
-                valorCru = valorCru.replace(/\./g, '').replace(',', '.');
-            } else if (valorCru.includes(',')) {
-                valorCru = valorCru.replace(',', '.');
+            if (linhaUpper.includes('DATA')) {
+                indexData = linhaUpper.indexOf('DATA');
+                // Procura a coluna de descrição
+                indexDesc = linhaUpper.findIndex(c => c.includes('HISTORICO') || c.includes('DESCRICAO') || c.includes('LANCAMENTO'));
+                
+                // Mapeamento Bradesco / Bancos Tradicionais (Colunas Separadas)
+                indexCredito = linhaUpper.findIndex(c => c === 'CREDITO');
+                indexDebito = linhaUpper.findIndex(c => c === 'DEBITO');
+                
+                // Mapeamento Bancos Digitais (Coluna Única)
+                indexValor = linhaUpper.findIndex(c => c === 'VALOR' || c === 'VALOR (R$)');
+                
+                dadosIniciaram = true;
+            }
+            continue; // Pula a própria linha de cabeçalho
+        }
+
+        // 2. FASE DE EXTRAÇÃO: Lê as linhas de acordo com o mapeamento
+        if (dadosIniciaram && colunas.length > indexData && indexData !== -1) {
+            const dataStr = colunas[indexData];
+            const descricao = colunas[indexDesc] || 'Sem descrição';
+            
+            // Ignora linhas de saldo final, totais ou saldos bloqueados (comum no Bradesco)
+            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO') || descricao.toUpperCase().includes('SALDO')) {
+                continue;
+            }
+            
+            let valorCalculado = 0;
+            
+            // Se o arquivo separou Crédito e Débito (Padrão Bradesco)
+            if (indexCredito !== -1 && indexDebito !== -1) {
+                // Tira pontos de milhares e troca vírgula por ponto para o JavaScript entender
+                let valCred = colunas[indexCredito] ? colunas[indexCredito].replace(/\./g, '').replace(',', '.') : '0';
+                let valDeb = colunas[indexDebito] ? colunas[indexDebito].replace(/\./g, '').replace(',', '.') : '0';
+                
+                let numCred = parseFloat(valCred) || 0;
+                let numDeb = parseFloat(valDeb) || 0;
+                
+                if (numCred > 0) valorCalculado = numCred;
+                else if (numDeb > 0) valorCalculado = -Math.abs(numDeb); // Força o débito a ser negativo
+            } 
+            // Se o arquivo tem uma coluna de Valor única (Padrão Nubank/Inter)
+            else if (indexValor !== -1) {
+                let valCru = colunas[indexValor] ? colunas[indexValor].replace(/\./g, '').replace(',', '.') : '0';
+                valorCalculado = parseFloat(valCru) || 0;
             }
 
-            const valorNumerico = parseFloat(valorCru);
-
-            if (!isNaN(valorNumerico)) {
+            // Só salva se for um valor real e se a data parecer uma data válida (ex: contém barra)
+            if (!isNaN(valorCalculado) && valorCalculado !== 0 && dataStr.includes('/')) {
                 transacoesExtraidas.push({
                     data: dataStr,
                     descricao: descricao,
-                    valor: valorNumerico,
-                    tipo: valorNumerico < 0 ? 'debito' : 'credito',
+                    valor: valorCalculado,
+                    tipo: valorCalculado < 0 ? 'debito' : 'credito',
                     idBanco: idBanco
                 });
             }
@@ -88,27 +126,28 @@ function renderizarTabelaConciliacao(transacoes) {
     const container = document.getElementById('tabela-conciliacao-container');
     
     if (transacoes.length === 0) {
-        container.innerHTML = `<p style="color: red; text-align: center;">Não foi possível ler as transações. Verifique se o arquivo é um CSV válido.</p>`;
+        container.innerHTML = `<p style="color: red; text-align: center; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 8px;">Não foi possível encontrar transações válidas neste arquivo. Verifique se é o extrato correto do banco.</p>`;
         return;
     }
 
     let html = `
-        <h4 style="color:#002f6c; margin-bottom: 10px;">Pré-visualização do Extrato</h4>
+        <h4 style="color:#002f6c; margin-bottom: 10px; margin-top: 20px;">Pré-visualização do Extrato</h4>
         <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Os <b>Créditos</b> serão conciliados com a Aba 1. Classifique os seus <b>Débitos</b> abaixo.</p>
-        <table style="width: 100%; font-size: 13px;">
+        <div style="background: white; border: 1px solid #cfd8dc; border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
             <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Descrição Original</th>
-                    <th style="text-align:right">Valor</th>
-                    <th>Categoria (Aprendizado)</th>
+                <tr style="background: #eceff1; border-bottom: 2px solid #b0bec5;">
+                    <th style="padding: 10px 5px; text-align: left;">Data</th>
+                    <th style="padding: 10px 5px; text-align: left;">Descrição Original</th>
+                    <th style="padding: 10px 5px; text-align:right">Valor</th>
+                    <th style="padding: 10px 5px; text-align:center;">Categoria (Aprendizado)</th>
                 </tr>
             </thead>
             <tbody>
     `;
 
     // Constrói o HTML do <select> de Categorias
-    let selectCategorias = `<select class="select-categoria" style="width: 100%; padding: 5px; border-radius: 4px; border: 1px solid #ccc;">`;
+    let selectCategorias = `<select class="select-categoria" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #b0bec5; background: #fafafa;">`;
     CATEGORIAS_PADRAO.forEach(cat => {
         selectCategorias += `<option value="${cat}">${cat}</option>`;
     });
@@ -119,16 +158,16 @@ function renderizarTabelaConciliacao(transacoes) {
         const iconTipo = t.tipo === 'debito' ? '🔻' : '🟢';
         
         html += `
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 10px 5px;">${t.data}</td>
-                <td style="padding: 10px 5px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${t.descricao}">
+            <tr style="border-bottom: 1px solid #eceff1;">
+                <td style="padding: 12px 5px; color: #455a64;">${t.data}</td>
+                <td style="padding: 12px 5px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #37474f;" title="${t.descricao}">
                     ${t.descricao}
                 </td>
-                <td style="padding: 10px 5px; text-align:right; font-weight: bold; color: ${corValor};">
+                <td style="padding: 12px 5px; text-align:right; font-weight: bold; color: ${corValor}; white-space: nowrap;">
                     ${iconTipo} R$ ${Math.abs(t.valor).toFixed(2)}
                 </td>
-                <td style="padding: 10px 5px; text-align:center;">
-                    ${t.tipo === 'debito' ? selectCategorias : '<span style="color:#888; font-size: 11px;">(Conciliação Automática)</span>'}
+                <td style="padding: 8px 5px; text-align:center;">
+                    ${t.tipo === 'debito' ? selectCategorias : '<span style="color:#78909c; font-size: 11px; font-weight: bold;">(Entrada/Conciliação)</span>'}
                 </td>
             </tr>
         `;
@@ -137,11 +176,12 @@ function renderizarTabelaConciliacao(transacoes) {
     html += `
             </tbody>
         </table>
-        <button class="btn-action btn-green" style="margin-top: 20px;" onclick="alert('Salvar no Firebase: Funcionalidade em construção no próximo passo!')">💾 Salvar e Conciliar no Banco de Dados</button>
+        </div>
+        <button class="btn-action btn-green" style="margin-top: 20px; font-size: 16px; padding: 15px;" onclick="alert('Salvar no Firebase: Funcionalidade em construção no próximo passo!')">💾 Salvar e Conciliar Despesas</button>
     `;
 
     container.innerHTML = html;
-    window.mostrarToast("Extrato lido com sucesso! Analise os dados.");
+    window.mostrarToast("Extrato lido e mapeado com sucesso!");
 }
 
 // Injeta as opções de Bancos também no formulário de Extratos
@@ -154,7 +194,7 @@ window.atualizarSelectBancosUpload = () => {
         return;
     }
 
-    selectUpload.innerHTML = `<option value="">Selecione o Banco...</option>`;
+    selectUpload.innerHTML = `<option value="">Selecione a Conta do Extrato...</option>`;
     window.listaBancos.forEach(b => {
         selectUpload.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
     });
