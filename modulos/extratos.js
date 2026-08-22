@@ -14,6 +14,21 @@ const CATEGORIAS_PADRAO = [
     "Educação"
 ];
 
+window.transacoesExtratoAtual = [];
+window.listaLancamentosExtratos = [];
+window.chartPizzaInstance = null;
+
+// Carrega os lançamentos salvos do Firestore
+window.carregarLancamentosExtratos = async () => {
+    try {
+        const snap = await getDocs(collection(db, "extratos_lancamentos"));
+        window.listaLancamentosExtratos = snap.docs.map(d => d.data());
+        window.renderizarRelatoriosConsolidados();
+    } catch (e) {
+        console.error("Erro ao carregar extratos_lancamentos:", e);
+    }
+};
+
 // O Robô de Processamento Profissional para o Bradesco Real
 window.processarCSV = () => {
     const bancoSelecionado = document.getElementById('bancoExtratoUpload').value;
@@ -47,7 +62,6 @@ function analisarDadosBradescoReal(linhasArray, idBanco) {
         return parseFloat(str) || 0;
     };
 
-    // Inteligência de Auto-Categorização por Palavras-Chave
     const autoCategorizar = (desc) => {
         const d = desc.toUpperCase();
         if (d.includes('MERCADO') || d.includes('SUPER') || d.includes('ATACAD') || d.includes('HIPER') || d.includes('HORTI')) return 'Supermercado';
@@ -108,10 +122,10 @@ function analisarDadosBradescoReal(linhasArray, idBanco) {
         }
     }
 
+    window.transacoesExtratoAtual = transacoesExtraidas;
     renderizarTabelaConciliacao(transacoesExtraidas);
 }
 
-// Desenha a Tabela Completa na Tela com Categoria Inteligente
 function renderizarTabelaConciliacao(transacoes) {
     const container = document.getElementById('tabela-conciliacao-container');
     
@@ -174,43 +188,40 @@ function renderizarTabelaConciliacao(transacoes) {
     window.mostrarToast(`Sucesso! ${transacoes.length} transações prontas para salvar.`);
 }
 
-// A Função Real de Gravação no Firebase
+// Grava no Firebase usando o valor float exato da memória
 window.salvarEConciliarExtrato = async () => {
     const bancoId = document.getElementById('bancoExtratoUpload').value;
     if (!bancoId) return alert("Selecione a conta bancária de origem.");
 
-    const linhas = document.querySelectorAll('#tabela-conciliacao-container tbody tr');
-    if (linhas.length === 0) return alert("Nenhuma transação para salvar.");
+    if (!window.transacoesExtratoAtual || window.transacoesExtratoAtual.length === 0) {
+        return alert("Nenhuma transação para salvar.");
+    }
 
-    if (!confirm(`Deseja salvar e conciliar estas ${linhas.length} transações no banco de dados?`)) return;
+    if (!confirm(`Deseja salvar e conciliar estas ${window.transacoesExtratoAtual.length} transações no banco de dados?`)) return;
 
     window.mostrarToast("Salvando transações no Firebase...");
 
-    try {
-        for (let i = 0; i < linhas.length; i++) {
-            const tr = linhas[i];
-            const data = tr.cells[0].innerText.trim();
-            const descricao = tr.cells[1].innerText.trim();
-            const valorTexto = tr.cells[2].innerText.trim();
-            
-            const ehDebito = valorTexto.includes('🔻');
-            const numLimpo = valorTexto.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
-            let valorNum = parseFloat(numLimpo) || 0;
-            if (ehDebito) valorNum = -Math.abs(valorNum);
-            else valorNum = Math.abs(valorNum);
+    const selects = document.querySelectorAll('#tabela-conciliacao-container tbody select.select-categoria');
 
-            const selectCat = tr.querySelector('.select-categoria');
-            const categoria = selectCat ? selectCat.value : 'Entrada';
+    try {
+        let debitoCount = 0;
+        for (let i = 0; i < window.transacoesExtratoAtual.length; i++) {
+            const t = window.transacoesExtratoAtual[i];
+            let catFinal = 'Entrada';
+            if (t.tipo === 'debito') {
+                catFinal = selects[debitoCount] ? selects[debitoCount].value : t.categoriaSugerida;
+                debitoCount++;
+            }
 
             const idTransacao = `TRANS-${Date.now()}-${i}`;
             const transacaoObj = {
                 id: idTransacao,
                 idBanco: bancoId,
-                data: data,
-                descricao: descricao,
-                valor: valorNum,
-                tipo: ehDebito ? 'debito' : 'credito',
-                categoria: categoria,
+                data: t.data,
+                descricao: t.descricao,
+                valor: t.valor, // Float exato (ex: -16.74, 0.01)
+                tipo: t.tipo,
+                categoria: catFinal,
                 timestamp: Date.now()
             };
 
@@ -221,12 +232,158 @@ window.salvarEConciliarExtrato = async () => {
         document.getElementById('tabela-conciliacao-container').innerHTML = `
             <div style="background: #e8f5e9; border: 1px solid #a5d6a7; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
                 <h4 style="color: #2e7d32; margin-bottom: 5px;">🎉 Conciliação Concluída com Sucesso!</h4>
-                <p style="font-size: 13px; color: #555;">As despesas e entradas foram gravadas no seu ERP e já estão prontas para alimentar os relatórios financeiros.</p>
+                <p style="font-size: 13px; color: #555;">As despesas e entradas foram gravadas e já estão visíveis nos Relatórios Consolidados.</p>
             </div>
         `;
+
+        await window.carregarLancamentosExtratos();
+
     } catch (e) {
         console.error("Erro ao salvar no Firebase:", e);
-        alert("Ocorreu um erro ao salvar as transações. Verifique a consola.");
+        alert("Ocorreu um erro ao salvar as transações.");
+    }
+};
+
+// Motor de Cálculo e Renderização dos Relatórios Consolidados (Aba 3)
+window.renderizarRelatoriosConsolidados = () => {
+    const elSaldo = document.getElementById('relatorio-saldo-total');
+    const elDespesas = document.getElementById('relatorio-total-despesas');
+    const tabelaContainer = document.getElementById('tabela-categorias-detalhe');
+    const listaContainer = document.getElementById('lista-lancamentos-conciliados');
+
+    if (!elSaldo || !elDespesas) return;
+
+    let saldoInicialTotal = 0;
+    if (window.listaBancos && Array.isArray(window.listaBancos)) {
+        saldoInicialTotal = window.listaBancos.reduce((acc, b) => acc + (parseFloat(b.saldoInicial) || 0), 0);
+    }
+
+    let totalCreditos = 0;
+    let totalDebitos = 0;
+    const gastosPorCategoria = {};
+
+    CATEGORIAS_PADRAO.forEach(c => { gastosPorCategoria[c] = 0; });
+
+    window.listaLancamentosExtratos.forEach(lanc => {
+        const val = parseFloat(lanc.valor) || 0;
+        if (lanc.tipo === 'debito' || val < 0) {
+            const valAbs = Math.abs(val);
+            totalDebitos += valAbs;
+            const cat = lanc.categoria || 'Outros';
+            gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + valAbs;
+        } else {
+            totalCreditos += val;
+        }
+    });
+
+    const saldoRemanescente = saldoInicialTotal + totalCreditos - totalDebitos;
+
+    elSaldo.innerText = saldoRemanescente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    elDespesas.innerText = totalDebitos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    // Renderiza Gráfico de Pizza (Chart.js)
+    const ctxPizza = document.getElementById('grafico-despesas-pizza');
+    if (ctxPizza) {
+        if (window.chartPizzaInstance) {
+            window.chartPizzaInstance.destroy();
+        }
+
+        const categoriasComGasto = Object.keys(gastosPorCategoria).filter(k => gastosPorCategoria[k] > 0);
+        const valoresComGasto = categoriasComGasto.map(k => gastosPorCategoria[k]);
+        
+        const cores = [
+            '#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', 
+            '#00acc1', '#3949ab', '#d81b60', '#7cb342', '#6d4c41'
+        ];
+
+        if (valoresComGasto.length > 0) {
+            window.chartPizzaInstance = new Chart(ctxPizza, {
+                type: 'doughnut',
+                data: {
+                    labels: categoriasComGasto,
+                    datasets: [{
+                        data: valoresComGasto,
+                        backgroundColor: cores.slice(0, categoriasComGasto.length),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const val = context.parsed || 0;
+                                    const pct = totalDebitos > 0 ? ((val / totalDebitos) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: R$ ${val.toFixed(2)} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Tabela Detalhada de Categorias
+    if (tabelaContainer) {
+        let htmlTab = `
+            <table style="width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 15px;">
+                <thead>
+                    <tr style="background: #f3e5f5; border-bottom: 2px solid #ce93d8;">
+                        <th style="padding: 8px; text-align: left;">Categoria</th>
+                        <th style="padding: 8px; text-align: right;">Total Gasto</th>
+                        <th style="padding: 8px; text-align: right;">%</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        Object.keys(gastosPorCategoria).sort((a,b) => gastosPorCategoria[b] - gastosPorCategoria[a]).forEach(cat => {
+            const gasto = gastosPorCategoria[cat];
+            if (gasto > 0) {
+                const pct = totalDebitos > 0 ? ((gasto / totalDebitos) * 100).toFixed(1) : 0;
+                htmlTab += `
+                    <tr style="border-bottom: 1px solid #f3e5f5;">
+                        <td style="padding: 8px; font-weight: bold; color: #455a64;">${cat}</td>
+                        <td class="esconder-valor" style="padding: 8px; text-align: right; color: #d32f2f; font-weight: bold;">R$ ${gasto.toFixed(2)}</td>
+                        <td style="padding: 8px; text-align: right; color: #666;">${pct}%</td>
+                    </tr>
+                `;
+            }
+        });
+
+        htmlTab += `</tbody></table>`;
+        tabelaContainer.innerHTML = htmlTab;
+    }
+
+    // Lista de Lançamentos Gravados
+    if (listaContainer) {
+        if (window.listaLancamentosExtratos.length === 0) {
+            listaContainer.innerHTML = "<p style='text-align:center; color:#999; font-size:13px;'>Nenhum lançamento conciliado ainda.</p>";
+            return;
+        }
+
+        let htmlList = `<div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;"><table style="width:100%; font-size:12px; border-collapse:collapse;"><tbody>`;
+        
+        window.listaLancamentosExtratos.slice().reverse().forEach(item => {
+            const ehDebito = item.tipo === 'debito' || parseFloat(item.valor) < 0;
+            const cor = ehDebito ? '#d32f2f' : '#2e7d32';
+            const icon = ehDebito ? '🔻' : '🟢';
+            htmlList += `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px; color: #666;">${item.data}</td>
+                    <td style="padding: 8px; color: #333; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.descricao}</td>
+                    <td style="padding: 8px; text-align: right; font-weight: bold; color: ${cor};" class="esconder-valor">${icon} R$ ${Math.abs(item.valor).toFixed(2)}</td>
+                    <td style="padding: 8px; text-align: center; color: #888; font-size: 11px;">${item.categoria}</td>
+                </tr>
+            `;
+        });
+
+        htmlList += `</tbody></table></div>`;
+        listaContainer.innerHTML = htmlList;
     }
 };
 
