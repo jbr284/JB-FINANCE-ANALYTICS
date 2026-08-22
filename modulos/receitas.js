@@ -25,13 +25,22 @@ window.obterPeriodo = (dataStr) => {
     return { ano: dateObj.getUTCFullYear(), mes: dateObj.getUTCMonth(), dia: dateObj.getUTCDate(), quinzena: dateObj.getUTCDate() <= 15 ? 1 : 2 };
 };
 
+// Preview Dinâmico do Saripan
 window.atualizarPreview = () => {
     const base = parseFloat(document.getElementById('valorBase').value) || 0;
     const carga = parseInt(document.getElementById('tipoCarga').value);
     const tipoDia = parseInt(document.getElementById('tipoDia').value);
     const pesoDia = (tipoDia === 3 || tipoDia === 2) ? 2 : 1;
     const multiplicador = (pesoDia === 2 && carga === 2) ? 4 : (carga * pesoDia);
-    document.getElementById('previewValor').value = `R$ ${(base * multiplicador).toFixed(2)}`;
+    const previewEl = document.getElementById('previewValor');
+    if (previewEl) previewEl.value = `R$ ${(base * multiplicador).toFixed(2)}`;
+};
+
+// Preview Dinâmico da Modular (Calcula os 40%)
+window.atualizarPreviewModular = () => {
+    const base = parseFloat(document.getElementById('valorSalarioBase').value) || 0;
+    const previewEl = document.getElementById('previewAdiantamento');
+    if (previewEl) previewEl.value = (base * 0.40).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
 };
 
 window.atualizarRodapeDinamico = () => {
@@ -286,8 +295,12 @@ window.renderizarFinanceiroSaripan = () => {
 window.adicionarRegistroModular = async () => {
     const mesStr = document.getElementById('mesModular').value; 
     const banco = document.getElementById('bancoModular') ? document.getElementById('bancoModular').value : '';
-    const adiantamentoTela = parseFloat(document.getElementById('valorAdiantamento').value) || 0;
+    
+    // Novas variáveis
+    const salarioBase = parseFloat(document.getElementById('valorSalarioBase').value) || 0;
+    const adiantamentoCalculado = salarioBase * 0.40;
     const salarioTela = parseFloat(document.getElementById('valorSalario').value) || 0;
+    
     const outrasTela = parseFloat(document.getElementById('valorOutras').value) || 0;
     const nomeOutras = document.getElementById('nomeOutras') ? document.getElementById('nomeOutras').value.trim() : 'Extra';
     
@@ -295,14 +308,15 @@ window.adicionarRegistroModular = async () => {
     
     const [ano, mesNum] = mesStr.split('-').map(Number);
     const idUnico = `MOD-${ano}-${mesNum}`; 
-    const totalFinal = adiantamentoTela + salarioTela + outrasTela + 600 + 500 + 125; // Benefícios fixos
+    const totalFinal = adiantamentoCalculado + salarioTela + outrasTela + 600 + 500 + 125; // Benefícios fixos
     
     const novoReg = { 
         id: idUnico, 
         ano: ano, 
         mes: mesNum - 1, 
         bancoDestino: banco, 
-        adiantamento: adiantamentoTela, 
+        salarioBase: salarioBase, // Guarda o base no BD
+        adiantamento: adiantamentoCalculado, 
         salario: salarioTela, 
         outras: outrasTela, 
         nomeOutras: nomeOutras,
