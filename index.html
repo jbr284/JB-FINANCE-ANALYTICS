@@ -126,7 +126,7 @@
                 <div>
                     <label style="color: #d84315; font-weight: bold;">Banco de Destino (Para Conciliação):</label>
                     <select id="bancoModular" style="margin-bottom: 15px; padding: 12px; background: #fff3e0; border: 1px solid #ffcc80;">
-                        <option value="padrao">Aguardando Cadastro de Bancos (Aba 2)...</option>
+                        <option value="padrao">Aguardando Cadastro de Bancos...</option>
                     </select>
                 </div>
             </div>
@@ -142,7 +142,6 @@
                 </div>
             </div>
 
-            <!-- NOVOS BENEFÍCIOS FIXOS -->
             <div class="form-box" style="background: #e8f5e9; border-color: #a5d6a7; margin-top: 15px; padding: 10px;">
                 <h4 style="color: #2e7d32; margin-bottom: 10px; font-size: 13px;">Benefícios Fixos Contratuais</h4>
                 <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
@@ -208,24 +207,42 @@
     </div>
 
     <!-- ============================================ -->
-    <!-- ABA 2: BANCOS E EXTRATOS (NOVO)              -->
+    <!-- ABA 2: BANCOS E EXTRATOS                     -->
     <!-- ============================================ -->
     <div id="module-bancos" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
-        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:0;">Cadastro de Contas</h3>
-        <div class="form-box" style="text-align: center; padding: 30px;">
-            <span style="font-size: 30px;">🏦</span>
-            <p style="font-size: 14px; color: #666; margin-top: 10px;">Módulo em construção.<br>Aqui você definirá o saldo de implantação (Data de Corte).</p>
-        </div>
         
-        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Importação de Extrato</h3>
-        <div class="form-box" style="text-align: center; padding: 30px;">
+        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:0;">Cadastro de Contas (Data de Corte)</h3>
+        <div class="form-box">
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Cadastre os seus bancos e informe qual era o saldo real na data de implantação do sistema (ex: 01/08).</p>
+            
+            <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
+                <div>
+                    <label>Nome do Banco / Carteira:</label>
+                    <input type="text" id="nomeBanco" placeholder="Ex: Itaú, Nubank, Dinheiro Vivo" style="border: 1px solid #90a4ae;">
+                </div>
+                <div>
+                    <label>Saldo Inicial (R$):</label>
+                    <input type="number" id="saldoInicialBanco" placeholder="0.00" style="border: 1px solid #90a4ae;">
+                </div>
+            </div>
+            
+            <button class="btn-action" style="background-color: #455a64;" onclick="adicionarBanco()">🏦 Cadastrar Banco</button>
+        </div>
+
+        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Bancos Cadastrados</h3>
+        <div id="lista-bancos-container" style="margin-bottom: 30px;">
+            <!-- A tabela de bancos será injetada aqui -->
+        </div>
+
+        <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Importação de Extrato (CSV/OFX)</h3>
+        <div class="form-box" style="text-align: center; padding: 30px; opacity: 0.6;">
             <span style="font-size: 30px;">📄</span>
-            <p style="font-size: 14px; color: #666; margin-top: 10px;">Em breve: Upload de arquivo OFX/CSV com conciliação automática.</p>
+            <p style="font-size: 14px; color: #666; margin-top: 10px;">O robô de leitura de extratos será ativado na próxima etapa.</p>
         </div>
     </div>
 
     <!-- ============================================ -->
-    <!-- ABA 3: RELATÓRIOS CONSOLIDADOS (NOVO)        -->
+    <!-- ABA 3: RELATÓRIOS CONSOLIDADOS               -->
     <!-- ============================================ -->
     <div id="module-relatorios" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         <h3 style="color:#6a1b9a; border-bottom: 2px solid #ce93d8; padding-bottom: 10px; margin-top:0;">Saldo Remanescente Total</h3>
@@ -243,7 +260,7 @@
 
   </div>
 
-  <!-- CONTAINER PRINT (INTACTO) -->
+  <!-- CONTAINER PRINT -->
   <div id="print-container" style="position: absolute; top: -9999px; left: -9999px;">
       <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
           <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório</h1>
