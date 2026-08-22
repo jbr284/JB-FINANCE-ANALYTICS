@@ -1,4 +1,4 @@
-const CACHE_NAME = 'REMUN-JB-V7.6'; 
+const CACHE_NAME = 'REMUN-JB-V7.7'; 
 
 const ASSETS = [
   './',
