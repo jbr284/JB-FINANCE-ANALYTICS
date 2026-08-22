@@ -3,7 +3,6 @@ import { db } from './firebase-config.js';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { MESES } from './ui.js';
 
-// --- FUNÇÕES GERAIS ---
 window.carregarTodosOsDados = async () => {
     try {
         const snapSari = await getDocs(collection(db, "apontamentos"));
@@ -96,7 +95,6 @@ window.limparGraficos = () => {
 };
 
 // --- MÓDULO SARIPAN ---
-// Nova Função: Salvar Banco Padrão Independente
 window.salvarBancoPadraoSaripan = async () => {
     const bancoSari = document.getElementById('bancoSaripan')?.value || '';
     if (!bancoSari) return alert("Por favor, selecione uma Conta ou Cartão primeiro.");
@@ -342,6 +340,7 @@ window.renderizarFinanceiroSaripan = () => {
                     data: { labels: labels, datasets: [ { label: 'Rendimento Mensal Total', data: dadosTotalMes, backgroundColor: '#1b5e20', borderRadius: 6 } ] }, 
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } }, scales: { y: { beginAtZero: true } } } 
                 });
+                if (!window.chartsAtivos) window.chartsAtivos = []; // TRAVA DE SEGURANÇA AQUI
                 window.chartsAtivos.push(chartBar); 
             }
 
@@ -352,6 +351,7 @@ window.renderizarFinanceiroSaripan = () => {
                     data: { labels: labels, datasets: [ { label: '1ª Quinzena', data: dadosQ1, borderColor: '#81c784', backgroundColor: 'rgba(129, 199, 132, 0.1)', fill: true, tension: 0.4, pointRadius: 4, pointHoverRadius: 6 }, { label: '2ª Quinzena', data: dadosQ2, borderColor: '#2e7d32', backgroundColor: 'rgba(46, 125, 50, 0.1)', fill: true, tension: 0.4, pointRadius: 4, pointHoverRadius: 6 } ] }, 
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } }, scales: { y: { beginAtZero: true } } } 
                 });
+                if (!window.chartsAtivos) window.chartsAtivos = []; // TRAVA DE SEGURANÇA AQUI
                 window.chartsAtivos.push(chartLine); 
             }
         }, 100);
@@ -569,7 +569,7 @@ window.renderizarDashboardGeral = () => {
                     ] }, 
                     options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } } } 
                 });
-                if(!window.chartsAtivos) window.chartsAtivos = [];
+                if (!window.chartsAtivos) window.chartsAtivos = []; // TRAVA DE SEGURANÇA AQUI
                 window.chartsAtivos.push(chart);
             }
         }, 100);
