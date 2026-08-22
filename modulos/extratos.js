@@ -17,24 +17,18 @@ window.processarCSV = () => {
     const bancoSelecionado = document.getElementById('bancoExtratoUpload').value;
     const fileInput = document.getElementById('arquivoCSV');
 
-    if (!bancoSelecionado) {
-        return alert("Por favor, selecione para qual banco este extrato pertence.");
-    }
-    
-    if (!fileInput.files.length) {
-        return alert("Por favor, selecione um arquivo CSV do seu banco.");
-    }
+    if (!bancoSelecionado) return alert("Por favor, selecione para qual banco este extrato pertence.");
+    if (!fileInput.files.length) return alert("Por favor, selecione um arquivo CSV do seu banco.");
 
     const file = fileInput.files[0];
     const reader = new FileReader();
 
-    // Quando o robô terminar de ler o arquivo
     reader.onload = (e) => {
         const text = e.target.result;
         analisarLinhasCSV(text, bancoSelecionado);
     };
 
-    // Lê o arquivo (O Bradesco usa codificação Latin1/ISO-8859-1 que pode quebrar acentos, o navegador tenta ajustar)
+    // Lê o arquivo em Latin1 para não quebrar os acentos dos sistemas bancários do Brasil
     reader.readAsText(file, 'ISO-8859-1');
 };
 
@@ -45,43 +39,45 @@ function analisarLinhasCSV(textoCSV, idBanco) {
     
     let indexData = -1, indexDesc = -1, indexValor = -1, indexCredito = -1, indexDebito = -1;
     let dadosIniciaram = false;
+    
+    // O GRANDE SEGREDO: Descobre se o banco usa ponto-e-vírgula ou vírgula
+    const separador = textoCSV.includes(';') ? ';' : ',';
 
     for (let i = 0; i < linhas.length; i++) {
         let linha = linhas[i].trim();
         if (!linha) continue;
 
-        // Separa por ponto-e-vírgula ou vírgula e limpa aspas duplas
-        const colunas = linha.split(/;|,/).map(c => c.replace(/"/g, '').trim());
+        // Divide as colunas com segurança, sem quebrar os centavos
+        const colunas = linha.split(separador).map(c => c.replace(/"/g, '').trim());
         
         // 1. FASE DE MAPEAMENTO: Procura onde a tabela real começa
         if (!dadosIniciaram) {
-            // Converte para maiúsculas para facilitar a busca (ignorando acentos)
             const linhaUpper = colunas.map(c => c.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
             
-            if (linhaUpper.includes('DATA')) {
-                indexData = linhaUpper.indexOf('DATA');
-                // Procura a coluna de descrição
+            // O Bradesco às vezes escreve "Lançamento", "Histórico", "Data"
+            if (linhaUpper.some(c => c === 'DATA' || c === 'DATA LANCTO')) {
+                indexData = linhaUpper.findIndex(c => c === 'DATA' || c === 'DATA LANCTO');
                 indexDesc = linhaUpper.findIndex(c => c.includes('HISTORICO') || c.includes('DESCRICAO') || c.includes('LANCAMENTO'));
                 
-                // Mapeamento Bradesco / Bancos Tradicionais (Colunas Separadas)
-                indexCredito = linhaUpper.findIndex(c => c === 'CREDITO');
-                indexDebito = linhaUpper.findIndex(c => c === 'DEBITO');
+                // Mapeamento Bradesco (Usa includes porque a coluna chama-se 'CREDITO (R$)')
+                indexCredito = linhaUpper.findIndex(c => c.includes('CREDITO'));
+                indexDebito = linhaUpper.findIndex(c => c.includes('DEBITO'));
                 
                 // Mapeamento Bancos Digitais (Coluna Única)
-                indexValor = linhaUpper.findIndex(c => c === 'VALOR' || c === 'VALOR (R$)');
+                indexValor = linhaUpper.findIndex(c => c === 'VALOR' || c.includes('VALOR (R$)'));
                 
                 dadosIniciaram = true;
             }
-            continue; // Pula a própria linha de cabeçalho
+            continue; 
         }
 
-        // 2. FASE DE EXTRAÇÃO: Lê as linhas de acordo com o mapeamento
+        // 2. FASE DE EXTRAÇÃO: Lê as linhas e valores
         if (dadosIniciaram && colunas.length > indexData && indexData !== -1) {
             const dataStr = colunas[indexData];
             const descricao = colunas[indexDesc] || 'Sem descrição';
             
-            // Ignora linhas de saldo final, totais ou saldos bloqueados (comum no Bradesco)
-            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO') || descricao.toUpperCase().includes('SALDO')) {
+            // Pula linhas de saldo final, totais ou cabeçalhos residuais
+            if (!dataStr || dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO') || descricao.toUpperCase().includes('SALDO')) {
                 continue;
             }
             
@@ -89,7 +85,6 @@ function analisarLinhasCSV(textoCSV, idBanco) {
             
             // Se o arquivo separou Crédito e Débito (Padrão Bradesco)
             if (indexCredito !== -1 && indexDebito !== -1) {
-                // Tira pontos de milhares e troca vírgula por ponto para o JavaScript entender
                 let valCred = colunas[indexCredito] ? colunas[indexCredito].replace(/\./g, '').replace(',', '.') : '0';
                 let valDeb = colunas[indexDebito] ? colunas[indexDebito].replace(/\./g, '').replace(',', '.') : '0';
                 
@@ -99,14 +94,14 @@ function analisarLinhasCSV(textoCSV, idBanco) {
                 if (numCred > 0) valorCalculado = numCred;
                 else if (numDeb > 0) valorCalculado = -Math.abs(numDeb); // Força o débito a ser negativo
             } 
-            // Se o arquivo tem uma coluna de Valor única (Padrão Nubank/Inter)
+            // Se for coluna de Valor única (Nubank)
             else if (indexValor !== -1) {
                 let valCru = colunas[indexValor] ? colunas[indexValor].replace(/\./g, '').replace(',', '.') : '0';
                 valorCalculado = parseFloat(valCru) || 0;
             }
 
-            // Só salva se for um valor real e se a data parecer uma data válida (ex: contém barra)
-            if (!isNaN(valorCalculado) && valorCalculado !== 0 && dataStr.includes('/')) {
+            // Regista se for um valor real de movimentação
+            if (!isNaN(valorCalculado) && valorCalculado !== 0) {
                 transacoesExtraidas.push({
                     data: dataStr,
                     descricao: descricao,
@@ -146,7 +141,6 @@ function renderizarTabelaConciliacao(transacoes) {
             <tbody>
     `;
 
-    // Constrói o HTML do <select> de Categorias
     let selectCategorias = `<select class="select-categoria" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #b0bec5; background: #fafafa;">`;
     CATEGORIAS_PADRAO.forEach(cat => {
         selectCategorias += `<option value="${cat}">${cat}</option>`;
@@ -154,7 +148,7 @@ function renderizarTabelaConciliacao(transacoes) {
     selectCategorias += `</select>`;
 
     transacoes.forEach((t, index) => {
-        const corValor = t.tipo === 'debito' ? '#d32f2f' : '#2e7d32'; // Vermelho p/ Saída, Verde p/ Entrada
+        const corValor = t.tipo === 'debito' ? '#d32f2f' : '#2e7d32'; 
         const iconTipo = t.tipo === 'debito' ? '🔻' : '🟢';
         
         html += `
@@ -184,7 +178,6 @@ function renderizarTabelaConciliacao(transacoes) {
     window.mostrarToast("Extrato lido e mapeado com sucesso!");
 }
 
-// Injeta as opções de Bancos também no formulário de Extratos
 window.atualizarSelectBancosUpload = () => {
     const selectUpload = document.getElementById('bancoExtratoUpload');
     if (!selectUpload) return;
