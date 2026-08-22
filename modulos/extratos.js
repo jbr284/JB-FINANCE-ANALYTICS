@@ -28,112 +28,93 @@ window.processarCSV = () => {
         analisarLinhasCSV(text, bancoSelecionado);
     };
 
-    // Lê o arquivo em Latin1 para não quebrar os acentos dos sistemas bancários do Brasil
+    // Lê o arquivo (ISO-8859-1 previne que os acentos do Bradesco fiquem desconfigurados)
     reader.readAsText(file, 'ISO-8859-1');
 };
 
-// O Novo Cérebro Analítico (Robô Universal Bradesco/Itaú/Nubank)
+// O Novo Cérebro Analítico (Inteligência "Data-First" à prova de Bradesco)
 function analisarLinhasCSV(textoCSV, idBanco) {
     const linhas = textoCSV.split('\n');
     let transacoesExtraidas = [];
     
-    let indexData = -1, indexDesc = -1, indexValor = -1, indexCredito = -1, indexDebito = -1;
-    let dadosIniciaram = false;
-    
-    // Descobre se o banco usa ponto-e-vírgula ou vírgula
+    // Descobre se o banco usa ponto-e-vírgula (Bradesco/Itaú) ou vírgula (Nubank)
     const separador = textoCSV.includes(';') ? ';' : ',';
+    
+    // Expressão regular que caça padrões de data no início (DD/MM)
+    const regexData = /^\d{2}\/\d{2}/;
+
+    // Função de Raio-X numérico (converte strings PT-BR para matemática do sistema)
+    const parseValor = (str) => {
+        if (!str) return NaN;
+        let limpa = str.trim();
+        if (limpa === "") return NaN;
+        
+        // Se tiver R$ solto, limpa
+        limpa = limpa.replace('R$', '').trim();
+
+        if (limpa.includes(',') && limpa.includes('.')) {
+            limpa = limpa.replace(/\./g, '').replace(',', '.'); // Ex: 1.500,00 -> 1500.00
+        } else if (limpa.includes(',')) {
+            limpa = limpa.replace(',', '.'); // Ex: 50,00 -> 50.00
+        }
+        return parseFloat(limpa);
+    };
 
     for (let i = 0; i < linhas.length; i++) {
         let linha = linhas[i].trim();
         if (!linha) continue;
 
-        // Divide as colunas com segurança, sem quebrar os centavos
         const colunas = linha.split(separador).map(c => c.replace(/"/g, '').trim());
         
-        // 1. FASE DE MAPEAMENTO: Procura onde a tabela real começa
-        if (!dadosIniciaram) {
-            // Limpa tudo para facilitar a busca (remove acentos e deixa maiúsculo)
-            const linhaUpper = colunas.map(c => c.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
-            
-            // Verifica se esta linha é o cabeçalho procurando "DATA" e outra palavra chave
-            const isHeader = linhaUpper.some(c => c.includes('DATA')) && 
-                             (linhaUpper.some(c => c.includes('HIST') || c.includes('DESC') || c.includes('LANC')) || 
-                              linhaUpper.some(c => c.includes('VALOR') || c.includes('CRED') || c.includes('DEB')));
-            
-            if (isHeader) {
-                indexData = linhaUpper.findIndex(c => c.includes('DATA'));
-                
-                // Tenta achar a descrição (Bradesco usa Histórico)
-                let idxHist = linhaUpper.findIndex(c => c.includes('HIST'));
-                let idxDesc = linhaUpper.findIndex(c => c.includes('DESC'));
-                let idxLanc = linhaUpper.findIndex(c => c.includes('LANC'));
-                indexDesc = idxHist !== -1 ? idxHist : (idxDesc !== -1 ? idxDesc : idxLanc);
-                
-                // Acha as colunas de valor
-                indexCredito = linhaUpper.findIndex(c => c.includes('CRED'));
-                indexDebito = linhaUpper.findIndex(c => c.includes('DEB'));
-                indexValor = linhaUpper.findIndex(c => c.includes('VALOR'));
-                
-                dadosIniciaram = true;
-            }
-            continue; 
-        }
+        // SEGREDO DE MESTRE: Só processa a linha se ela começar com uma Data!
+        // Isso ignora instantaneamente falsos cabeçalhos, rodapés e metadados.
+        if (!regexData.test(colunas[0])) continue;
 
-        // 2. FASE DE EXTRAÇÃO: Lê as linhas e valores
-        if (dadosIniciaram && colunas.length > indexData && indexData !== -1) {
-            const dataStr = colunas[indexData];
-            
-            // Se não tiver data na coluna ou não tiver barra (ex: 15/08), ignora
-            if (!dataStr || !dataStr.includes('/')) continue;
-            
-            const descricao = indexDesc !== -1 && colunas[indexDesc] ? colunas[indexDesc] : 'Sem descrição';
-            
-            // Pula linhas de saldo final, totais ou cabeçalhos residuais
-            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO') || descricao.toUpperCase().includes('SALDO')) {
+        const dataStr = colunas[0];
+        let descricao = "Sem descrição";
+        let valorCalculado = 0;
+
+        // Limpeza de Saldos e Lixo Bancário
+        if (colunas.some(c => c.toUpperCase().includes('SALDO') || c.toUpperCase().includes('TOTAL'))) {
+            // Se a descrição for literalmente um aviso de saldo, pulamos.
+            if (colunas[1] && (colunas[1].toUpperCase().includes('SALDO') || colunas[1].toUpperCase().includes('TOTAL'))) {
                 continue;
             }
-            
-            let valorCalculado = 0;
-            
-            // Se o arquivo separou Crédito e Débito (Padrão Bradesco)
-            if (indexCredito !== -1 && indexDebito !== -1) {
-                let valCred = colunas[indexCredito] ? colunas[indexCredito].replace(/\./g, '').replace(',', '.') : '0';
-                let valDeb = colunas[indexDebito] ? colunas[indexDebito].replace(/\./g, '').replace(',', '.') : '0';
-                
-                let numCred = parseFloat(valCred) || 0;
-                let numDeb = parseFloat(valDeb) || 0;
-                
-                if (numCred > 0) valorCalculado = numCred;
-                else if (numDeb > 0) valorCalculado = -Math.abs(numDeb); // Força o débito a ser negativo
-            } 
-            // Se for coluna de Valor única (Nubank)
-            else if (indexValor !== -1) {
-                let valCru = colunas[indexValor] ? colunas[indexValor].replace(/\./g, '').replace(',', '.') : '0';
-                valorCalculado = parseFloat(valCru) || 0;
-            }
-            // Plano B (Fallback Extremo Bradesco): Se não achou cabeçalho limpo, mas a linha tem as 6 colunas clássicas do Bradesco
-            else if (colunas.length >= 5) {
-                // Bradesco padrão sem nome: Data(0), Historico(1), Docto(2), Credito(3), Debito(4), Saldo(5)
-                let valCred = colunas[3] ? colunas[3].replace(/\./g, '').replace(',', '.') : '0';
-                let valDeb = colunas[4] ? colunas[4].replace(/\./g, '').replace(',', '.') : '0';
-                
-                let numCred = parseFloat(valCred) || 0;
-                let numDeb = parseFloat(valDeb) || 0;
-                
-                if (numCred > 0) valorCalculado = numCred;
-                else if (numDeb > 0) valorCalculado = -Math.abs(numDeb);
-            }
+        }
 
-            // Regista a transação na tela se encontrou um valor válido
-            if (!isNaN(valorCalculado) && valorCalculado !== 0) {
-                transacoesExtraidas.push({
-                    data: dataStr,
-                    descricao: descricao,
-                    valor: valorCalculado,
-                    tipo: valorCalculado < 0 ? 'debito' : 'credito',
-                    idBanco: idBanco
-                });
-            }
+        // --- DETECÇÃO INTELIGENTE DA ESTRUTURA DO BANCO ---
+
+        // 1. Padrão Nubank (Data, Valor, Identificador, Descrição)
+        if (colunas.length === 4 && !isNaN(parseValor(colunas[1])) && isNaN(parseValor(colunas[3]))) {
+            valorCalculado = parseValor(colunas[1]);
+            descricao = colunas[3];
+        }
+        // 2. Padrão Bradesco Clássico (Data, Histórico, Docto, Crédito, Débito, Saldo)
+        else if (colunas.length >= 5) {
+            descricao = colunas[1] || 'Sem descrição';
+            
+            // O Bradesco isola Créditos e Débitos nas colunas 3 e 4
+            let cred = parseValor(colunas[3]);
+            let deb = parseValor(colunas[4]);
+            
+            if (!isNaN(cred) && cred !== 0) valorCalculado = Math.abs(cred);
+            else if (!isNaN(deb) && deb !== 0) valorCalculado = -Math.abs(deb);
+        }
+        // 3. Padrão Inter / Itaú Moderno (Data, Descrição, Valor, Saldo)
+        else if (colunas.length >= 3 && !isNaN(parseValor(colunas[2]))) {
+            descricao = colunas[1] || 'Sem descrição';
+            valorCalculado = parseValor(colunas[2]);
+        }
+
+        // --- REGISTRO DA TRANSAÇÃO ---
+        if (valorCalculado !== 0 && !isNaN(valorCalculado)) {
+            transacoesExtraidas.push({
+                data: dataStr,
+                descricao: descricao,
+                valor: valorCalculado,
+                tipo: valorCalculado < 0 ? 'debito' : 'credito',
+                idBanco: idBanco
+            });
         }
     }
 
@@ -145,7 +126,7 @@ function renderizarTabelaConciliacao(transacoes) {
     const container = document.getElementById('tabela-conciliacao-container');
     
     if (transacoes.length === 0) {
-        container.innerHTML = `<p style="color: red; text-align: center; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 8px;">Não foi possível encontrar transações válidas neste arquivo. Verifique se é o extrato correto do banco.</p>`;
+        container.innerHTML = `<p style="color: red; text-align: center; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 8px;">Nenhuma transação válida encontrada. Verifique se o arquivo tem movimentos no período.</p>`;
         return;
     }
 
@@ -199,7 +180,7 @@ function renderizarTabelaConciliacao(transacoes) {
     `;
 
     container.innerHTML = html;
-    window.mostrarToast("Extrato lido e mapeado com sucesso!");
+    window.mostrarToast("Extrato lido com sucesso pela nova Inteligência!");
 }
 
 window.atualizarSelectBancosUpload = () => {
