@@ -88,7 +88,6 @@
         <div class="scroll-content">
             <div id="painel-registrar" class="panel active">
               
-              <!-- CONFIGURAÇÃO DO BANCO SARIPAN -->
               <div class="form-box" style="margin-bottom: 15px; border-color: #81c784; background: #e8f5e9; padding: 10px;">
                   <label style="color: #2e7d32; font-size: 12px; font-weight: bold;">Banco Padrão de Recebimento (Saripan):</label>
                   <div style="display: flex; gap: 5px; margin-top: 5px;">
@@ -282,9 +281,7 @@
         </div>
 
         <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Contas Cadastradas</h3>
-        <div id="lista-bancos-container" style="margin-bottom: 30px;">
-            <!-- A tabela de bancos será injetada aqui -->
-        </div>
+        <div id="lista-bancos-container" style="margin-bottom: 30px;"></div>
 
         <h3 style="color:#455a64; border-bottom: 2px solid #b0bec5; padding-bottom: 10px; margin-top:20px;">Importação de Extrato</h3>
         <div class="form-box" style="border-color: #455a64; background-color: #eceff1;">
@@ -306,17 +303,31 @@
     <!-- ABA 3: RELATÓRIOS CONSOLIDADOS               -->
     <!-- ============================================ -->
     <div id="module-relatorios" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
+        
         <h3 style="color:#6a1b9a; border-bottom: 2px solid #ce93d8; padding-bottom: 10px; margin-top:0;">Saldo Remanescente Total</h3>
-        <div class="form-box" style="text-align: center; border-color: #ce93d8; background: #f3e5f5;">
-            <h2 class="esconder-valor" style="color: #4a148c; font-size: 32px; margin: 10px 0;">R$ 0,00</h2>
-            <p style="font-size: 13px; color: #666;">Cálculo: Entradas Reais - Despesas do Extrato</p>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <div class="year-summary" style="flex: 1.2; padding: 12px; background: #f3e5f5; border-color: #ce93d8;">
+                <h4 style="color: #6a1b9a; font-size: 11px;">SALDO REMANESCENTE</h4>
+                <div id="relatorio-saldo-total" class="year-total-value esconder-valor" style="font-size: 20px; color: #4a148c; margin-top: 8px;">R$ 0,00</div>
+            </div>
+            <div class="year-summary" style="flex: 1; padding: 12px; background: #ffebee; border-color: #ffcdd2;">
+                <h4 style="color: #c62828; font-size: 11px;">TOTAL DESPESAS</h4>
+                <div id="relatorio-total-despesas" class="year-total-value esconder-valor" style="font-size: 20px; color: #d32f2f; margin-top: 8px;">R$ 0,00</div>
+            </div>
         </div>
 
-        <h3 style="color:#6a1b9a; border-bottom: 2px solid #ce93d8; padding-bottom: 10px; margin-top:20px;">Despesas por Categoria</h3>
-        <div class="form-box" style="text-align: center; padding: 30px;">
-            <span style="font-size: 30px;">🍕</span>
-            <p style="font-size: 14px; color: #666; margin-top: 10px;">O Gráfico de Pizza detalhado aparecerá aqui.</p>
+        <div class="form-box" style="margin-bottom: 20px; padding: 15px; border-color: #ce93d8;">
+            <h4 style="color: #6a1b9a; margin-bottom: 15px; font-size: 14px; text-align: center;">Distribuição de Despesas por Categoria</h4>
+            <div style="position: relative; height: 260px; width: 100%; margin-bottom: 15px;">
+                <canvas id="grafico-despesas-pizza"></canvas>
+            </div>
+            <div id="tabela-categorias-detalhe"></div>
         </div>
+
+        <h3 style="color:#6a1b9a; border-bottom: 2px solid #ce93d8; padding-bottom: 10px; margin-top:20px;">Lançamentos Conciliados Gravados</h3>
+        <div id="lista-lancamentos-conciliados"></div>
+
     </div>
 
   </div>
@@ -357,8 +368,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- A NOVA FERRAMENTA PROFISSIONAL DE LEITURA DE CSV -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   
   <script type="module" src="app.js"></script>
