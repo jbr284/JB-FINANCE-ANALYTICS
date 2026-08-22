@@ -153,13 +153,14 @@
                 </div>
             </div>
 
+            <!-- NOVA LÓGICA DO SALÁRIO BASE -->
             <div class="grid-input">
                 <div>
-                    <label>Adiantamento (R$):</label>
-                    <input type="number" id="valorAdiantamento" placeholder="0.00">
+                    <label>Salário Base (R$):</label>
+                    <input type="number" id="valorSalarioBase" placeholder="0.00">
                 </div>
                 <div>
-                    <label>Salário Líquido (R$):</label>
+                    <label>Salário Líquido Recebido (R$):</label>
                     <input type="number" id="valorSalario" placeholder="0.00">
                 </div>
             </div>
@@ -170,7 +171,7 @@
                     <div><label style="font-size: 11px;">VA:</label><input type="text" value="R$ 600,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
                     <div><label style="font-size: 11px;">Mobilidade:</label><input type="text" value="R$ 500,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
                     <div><label style="font-size: 11px;">Ajuda Custo:</label><input type="text" value="R$ 125,00" readonly style="background:#c8e6c9; font-weight:bold; padding: 8px;"></div>
-                    <div><label style="font-size: 11px;">Adiant. (40%):</label><input type="text" value="Auto" readonly style="background:#c8e6c9; font-weight:bold; color: #2e7d32; text-align:center; padding: 8px;"></div>
+                    <div><label style="font-size: 11px;">Adiant. (40%):</label><input type="text" id="previewAdiantamento" value="R$ 0,00" readonly style="background:#c8e6c9; font-weight:bold; color: #2e7d32; text-align:center; padding: 8px;"></div>
                 </div>
             </div>
 
