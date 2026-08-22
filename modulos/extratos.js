@@ -12,7 +12,7 @@ const CATEGORIAS_PADRAO = [
     "Educação"
 ];
 
-// O Robô de Processamento Definitivo para o Bradesco
+// O Robô de Processamento Profissional para o Bradesco Real
 window.processarCSV = () => {
     const bancoSelecionado = document.getElementById('bancoExtratoUpload').value;
     const fileInput = document.getElementById('arquivoCSV');
@@ -26,7 +26,7 @@ window.processarCSV = () => {
         encoding: "ISO-8859-1", 
         skipEmptyLines: true,
         complete: function(results) {
-            processarExtratoBradesco(results.data, bancoSelecionado);
+            analisarDadosBradescoReal(results.data, bancoSelecionado);
         },
         error: function(err) {
             alert("Erro ao ler o arquivo: " + err);
@@ -34,112 +34,74 @@ window.processarCSV = () => {
     });
 };
 
-function processarExtratoBradesco(linhasArray, idBanco) {
+function analisarDadosBradescoReal(linhasArray, idBanco) {
     let transacoesExtraidas = [];
 
-    // Limpa e converte o formato monetário brasileiro para float
-    const converterValor = (str) => {
-        if (!str || typeof str !== 'string') return 0;
-        let limpo = str.replace(/R\$/g, '').trim();
-        if (limpo === "" || limpo === "-" || limpo === "0,00" || limpo === "0.00") return 0;
-        
-        // Remove pontos de milhares e troca vírgula por ponto
-        limpo = limpo.replace(/\./g, '').replace(',', '.');
-        return parseFloat(limpo) || 0;
+    const parseValorBradesco = (val) => {
+        if (!val || typeof val !== 'string') return 0;
+        let str = val.replace(/R\$/g, '').trim();
+        if (str === "" || str === "-" || str === "0,00" || str === "0.00") return 0;
+        str = str.replace(/\./g, '').replace(',', '.');
+        return parseFloat(str) || 0;
     };
 
-    // Expressão para validar se uma string começa com data (DD/MM/YY ou DD/MM/YYYY)
-    const regexData = /^\d{2}\/\d{2}\/\d{2,4}/;
+    // Inteligência de Auto-Categorização por Palavras-Chave
+    const autoCategorizar = (desc) => {
+        const d = desc.toUpperCase();
+        if (d.includes('MERCADO') || d.includes('SUPER') || d.includes('ATACAD') || d.includes('HIPER') || d.includes('HORTI')) return 'Supermercado';
+        if (d.includes('ACOUGUE') || d.includes('CARNE') || d.includes('FRIGO')) return 'Açougue';
+        if (d.includes('IFOOD') || d.includes('RESTAURANTE') || d.includes('PIZZA') || d.includes('LANCHONETE') || d.includes('PADARIA') || d.includes('MC DONALDS') || d.includes('BURGER')) return 'Fastfood';
+        if (d.includes('POSTO') || d.includes('SHELL') || d.includes('IPIRANGA') || d.includes('PETRO') || d.includes('COMBUSTIVEL')) return 'Posto de Combustível';
+        if (d.includes('NETFLIX') || d.includes('SPOTIFY') || d.includes('UBER') || d.includes('99') || d.includes('CINEMA')) return 'Lazer';
+        if (d.includes('LUZ') || d.includes('AGUA') || d.includes('ENERGIA') || d.includes('TELEFONE') || d.includes('INTERNET') || d.includes('CLARO') || d.includes('VIVO') || d.includes('TIM')) return 'Contas de Consumo';
+        if (d.includes('ESCOLA') || d.includes('FACULDADE') || d.includes('CURSO') || d.includes('LIVRO')) return 'Educação';
+        return 'Outros';
+    };
 
     for (let i = 0; i < linhasArray.length; i++) {
         const colunas = linhasArray[i];
-        
         if (!colunas || colunas.length === 0) continue;
 
-        // Procura em qual coluna está a data
-        let colDataIndex = -1;
-        for (let c = 0; c < colunas.length; c++) {
-            if (colunas[c] && regexData.test(colunas[c].trim())) {
-                colDataIndex = c;
-                break;
-            }
-        }
-
-        // Se encontrou uma linha com data
-        if (colDataIndex !== -1) {
-            let dataStr = colunas[colDataIndex].trim();
+        let dataStr = colunas[0] ? colunas[0].trim() : "";
+        
+        // Verifica se a linha começa com uma data válida (DD/MM/YY)
+        if (dataStr.match(/^\d{2}\/\d{2}\/\d{2}/)) {
+            let historico = colunas[1] ? colunas[1].trim() : "Sem descrição";
             
-            // Ignora linhas de saldo ou cabeçalhos residuais
-            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO')) {
-                continue;
-            }
-
-            // Descrição (Historico costuma estar logo após a data)
-            let historico = "Sem descrição";
-            if (colunas.length > colDataIndex + 1) {
-                for (let d = colDataIndex + 1; d < colunas.length; d++) {
-                    let texto = colunas[d] ? colunas[d].trim() : "";
-                    // Se não for um número de documento puro ou valor, é a descrição
-                    if (texto !== "" && isNaN(converterValor(texto))) {
-                        historico = texto;
-                        break;
-                    }
-                }
-            }
-
-            // Tratamento da linha seguinte caso exista complemento (ex: Mercado Villa)
+            // CAPTURA COMPLETA DA SEGUNDA LINHA (Complemento do Bradesco, ex: "Mercado Villa")
             if (i + 1 < linhasArray.length) {
                 let proximaLinha = linhasArray[i + 1];
-                let temDataProxima = proximaLinha.some(el => el && regexData.test(el.trim()));
-                if (!temDataProxima && proximaLinha.length >= 2) {
+                let proximaData = proximaLinha[0] ? proximaLinha[0].trim() : "";
+                if (!proximaData.match(/^\d{2}\/\d{2}\/\d{2}/)) {
                     let complemento = proximaLinha[1] || proximaLinha[0];
-                    if (complemento && complemento.trim() !== "" && isNaN(converterValor(complemento))) {
+                    if (complemento && complemento.trim() !== "") {
                         historico += " - " + complemento.trim();
                     }
                 }
             }
 
-            // Varredura de valores monetários na linha
-            let valoresEncontrados = [];
-            for (let j = 0; j < colunas.length; j++) {
-                if (j === colDataIndex) continue;
-                let valNum = converterValor(colunas[j]);
-                // Ignora números que parecem ser códigos de documento (ex: 6 dígitos inteiros sem vírgula)
-                let textoBruto = colunas[j] ? colunas[j].trim() : "";
-                if (valNum !== 0 && !isNaN(valNum)) {
-                    // No Bradesco, o Docto é um número inteiro sem vírgula. Valores monetários têm vírgula ou são decimais.
-                    if (textoBruto.includes(',') || textoBruto.includes('.')) {
-                        valoresEncontrados.push({ coluna: j, valor: valNum, texto: textoBruto });
-                    }
-                }
+            let valCredito = parseValorBradesco(colunas[3]);
+            let valDebito = parseValorBradesco(colunas[4]);
+
+            let valorFinal = 0;
+            let tipoTransacao = "credito";
+
+            if (valCredito > 0) {
+                valorFinal = valCredito;
+                tipoTransacao = "credito";
+            } else if (valDebito !== 0) {
+                valorFinal = -Math.abs(valDebito);
+                tipoTransacao = "debito";
             }
 
-            if (valoresEncontrados.length > 0) {
-                let valorFinal = 0;
-                let tipo = "credito";
-
-                // Se houver sinal explícito de menos no texto original, é débito
-                let temNegativo = valoresEncontrados.some(v => v.texto.includes('-'));
-                
-                // Pega o valor monetário (se houver mais de um, o último antes do saldo costuma ser o valor da transação)
-                // Vamos pegar o primeiro valor válido que tenha ponto ou vírgula decimal
-                let transacaoValida = valoresEncontrados[0].valor;
-                
-                // Se o histórico indica compra/pagamento ou se tem sinal negativo
-                let histUpper = historico.toUpperCase();
-                if (temNegativo || histUpper.includes('COMPRA') || histUpper.includes('PAG') || histUpper.includes('DEB') || histUpper.includes('PIX QRS') || histUpper.includes('SAQUE')) {
-                    valorFinal = -Math.abs(transacaoValida);
-                    tipo = "debito";
-                } else {
-                    valorFinal = Math.abs(transacaoValida);
-                    tipo = "credito";
-                }
-
+            if (valorFinal !== 0) {
+                let categoriaSugerida = tipoTransacao === 'debito' ? autoCategorizar(historico) : 'Entrada';
                 transacoesExtraidas.push({
                     data: dataStr,
                     descricao: historico,
                     valor: valorFinal,
-                    tipo: tipo,
+                    tipo: tipoTransacao,
+                    categoriaSugerida: categoriaSugerida,
                     idBanco: idBanco
                 });
             }
@@ -149,7 +111,7 @@ function processarExtratoBradesco(linhasArray, idBanco) {
     renderizarTabelaConciliacao(transacoesExtraidas);
 }
 
-// Desenha a Tabela Completa na Tela
+// Desenha a Tabela Completa na Tela com Categoria Inteligente
 function renderizarTabelaConciliacao(transacoes) {
     const container = document.getElementById('tabela-conciliacao-container');
     
@@ -166,28 +128,29 @@ function renderizarTabelaConciliacao(transacoes) {
             <thead>
                 <tr style="background: #eceff1; border-bottom: 2px solid #b0bec5; position: sticky; top: 0;">
                     <th style="padding: 10px 5px; text-align: left;">Data</th>
-                    <th style="padding: 10px 5px; text-align: left;">Descrição Original</th>
+                    <th style="padding: 10px 5px; text-align: left;">Descrição Original Completa</th>
                     <th style="padding: 10px 5px; text-align:right">Valor</th>
-                    <th style="padding: 10px 5px; text-align:center;">Categoria</th>
+                    <th style="padding: 10px 5px; text-align:center;">Categoria (Sugerida)</th>
                 </tr>
             </thead>
             <tbody>
     `;
 
-    let selectCategorias = `<select class="select-categoria" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #b0bec5; background: #fafafa;">`;
-    CATEGORIAS_PADRAO.forEach(cat => {
-        selectCategorias += `<option value="${cat}">${cat}</option>`;
-    });
-    selectCategorias += `</select>`;
-
     transacoes.forEach((t, index) => {
         const corValor = t.tipo === 'debito' ? '#d32f2f' : '#2e7d32'; 
         const iconTipo = t.tipo === 'debito' ? '🔻' : '🟢';
         
+        let selectCategorias = `<select class="select-categoria" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #b0bec5; background: #fafafa;">`;
+        CATEGORIAS_PADRAO.forEach(cat => {
+            const selecionado = cat === t.categoriaSugerida ? 'selected' : '';
+            selectCategorias += `<option value="${cat}" ${selecionado}>${cat}</option>`;
+        });
+        selectCategorias += `</select>`;
+        
         html += `
             <tr style="border-bottom: 1px solid #eceff1;">
                 <td style="padding: 10px 5px; color: #455a64; white-space: nowrap;">${t.data}</td>
-                <td style="padding: 10px 5px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #37474f;" title="${t.descricao}">
+                <td style="padding: 10px 5px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #37474f; font-weight: 500;" title="${t.descricao}">
                     ${t.descricao}
                 </td>
                 <td style="padding: 10px 5px; text-align:right; font-weight: bold; color: ${corValor}; white-space: nowrap;">
@@ -208,7 +171,7 @@ function renderizarTabelaConciliacao(transacoes) {
     `;
 
     container.innerHTML = html;
-    window.mostrarToast(`Sucesso! ${transacoes.length} transações carregadas com precisão.`);
+    window.mostrarToast(`Sucesso! ${transacoes.length} transações completas carregadas.`);
 }
 
 window.atualizarSelectBancosUpload = () => {
