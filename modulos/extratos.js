@@ -40,7 +40,7 @@ function analisarLinhasCSV(textoCSV, idBanco) {
     let indexData = -1, indexDesc = -1, indexValor = -1, indexCredito = -1, indexDebito = -1;
     let dadosIniciaram = false;
     
-    // O GRANDE SEGREDO: Descobre se o banco usa ponto-e-vírgula ou vírgula
+    // Descobre se o banco usa ponto-e-vírgula ou vírgula
     const separador = textoCSV.includes(';') ? ';' : ',';
 
     for (let i = 0; i < linhas.length; i++) {
@@ -52,19 +52,27 @@ function analisarLinhasCSV(textoCSV, idBanco) {
         
         // 1. FASE DE MAPEAMENTO: Procura onde a tabela real começa
         if (!dadosIniciaram) {
-            const linhaUpper = colunas.map(c => c.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+            // Limpa tudo para facilitar a busca (remove acentos e deixa maiúsculo)
+            const linhaUpper = colunas.map(c => c.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
             
-            // O Bradesco às vezes escreve "Lançamento", "Histórico", "Data"
-            if (linhaUpper.some(c => c === 'DATA' || c === 'DATA LANCTO')) {
-                indexData = linhaUpper.findIndex(c => c === 'DATA' || c === 'DATA LANCTO');
-                indexDesc = linhaUpper.findIndex(c => c.includes('HISTORICO') || c.includes('DESCRICAO') || c.includes('LANCAMENTO'));
+            // Verifica se esta linha é o cabeçalho procurando "DATA" e outra palavra chave
+            const isHeader = linhaUpper.some(c => c.includes('DATA')) && 
+                             (linhaUpper.some(c => c.includes('HIST') || c.includes('DESC') || c.includes('LANC')) || 
+                              linhaUpper.some(c => c.includes('VALOR') || c.includes('CRED') || c.includes('DEB')));
+            
+            if (isHeader) {
+                indexData = linhaUpper.findIndex(c => c.includes('DATA'));
                 
-                // Mapeamento Bradesco (Usa includes porque a coluna chama-se 'CREDITO (R$)')
-                indexCredito = linhaUpper.findIndex(c => c.includes('CREDITO'));
-                indexDebito = linhaUpper.findIndex(c => c.includes('DEBITO'));
+                // Tenta achar a descrição (Bradesco usa Histórico)
+                let idxHist = linhaUpper.findIndex(c => c.includes('HIST'));
+                let idxDesc = linhaUpper.findIndex(c => c.includes('DESC'));
+                let idxLanc = linhaUpper.findIndex(c => c.includes('LANC'));
+                indexDesc = idxHist !== -1 ? idxHist : (idxDesc !== -1 ? idxDesc : idxLanc);
                 
-                // Mapeamento Bancos Digitais (Coluna Única)
-                indexValor = linhaUpper.findIndex(c => c === 'VALOR' || c.includes('VALOR (R$)'));
+                // Acha as colunas de valor
+                indexCredito = linhaUpper.findIndex(c => c.includes('CRED'));
+                indexDebito = linhaUpper.findIndex(c => c.includes('DEB'));
+                indexValor = linhaUpper.findIndex(c => c.includes('VALOR'));
                 
                 dadosIniciaram = true;
             }
@@ -74,10 +82,14 @@ function analisarLinhasCSV(textoCSV, idBanco) {
         // 2. FASE DE EXTRAÇÃO: Lê as linhas e valores
         if (dadosIniciaram && colunas.length > indexData && indexData !== -1) {
             const dataStr = colunas[indexData];
-            const descricao = colunas[indexDesc] || 'Sem descrição';
+            
+            // Se não tiver data na coluna ou não tiver barra (ex: 15/08), ignora
+            if (!dataStr || !dataStr.includes('/')) continue;
+            
+            const descricao = indexDesc !== -1 && colunas[indexDesc] ? colunas[indexDesc] : 'Sem descrição';
             
             // Pula linhas de saldo final, totais ou cabeçalhos residuais
-            if (!dataStr || dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO') || descricao.toUpperCase().includes('SALDO')) {
+            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO') || descricao.toUpperCase().includes('SALDO')) {
                 continue;
             }
             
@@ -99,8 +111,20 @@ function analisarLinhasCSV(textoCSV, idBanco) {
                 let valCru = colunas[indexValor] ? colunas[indexValor].replace(/\./g, '').replace(',', '.') : '0';
                 valorCalculado = parseFloat(valCru) || 0;
             }
+            // Plano B (Fallback Extremo Bradesco): Se não achou cabeçalho limpo, mas a linha tem as 6 colunas clássicas do Bradesco
+            else if (colunas.length >= 5) {
+                // Bradesco padrão sem nome: Data(0), Historico(1), Docto(2), Credito(3), Debito(4), Saldo(5)
+                let valCred = colunas[3] ? colunas[3].replace(/\./g, '').replace(',', '.') : '0';
+                let valDeb = colunas[4] ? colunas[4].replace(/\./g, '').replace(',', '.') : '0';
+                
+                let numCred = parseFloat(valCred) || 0;
+                let numDeb = parseFloat(valDeb) || 0;
+                
+                if (numCred > 0) valorCalculado = numCred;
+                else if (numDeb > 0) valorCalculado = -Math.abs(numDeb);
+            }
 
-            // Regista se for um valor real de movimentação
+            // Regista a transação na tela se encontrou um valor válido
             if (!isNaN(valorCalculado) && valorCalculado !== 0) {
                 transacoesExtraidas.push({
                     data: dataStr,
