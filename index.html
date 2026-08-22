@@ -91,9 +91,12 @@
               <!-- CONFIGURAÇÃO DO BANCO SARIPAN -->
               <div class="form-box" style="margin-bottom: 15px; border-color: #81c784; background: #e8f5e9; padding: 10px;">
                   <label style="color: #2e7d32; font-size: 12px; font-weight: bold;">Banco Padrão de Recebimento (Saripan):</label>
-                  <select id="bancoSaripan" style="width: 100%; padding: 8px; border: 1px solid #a5d6a7; border-radius: 4px; margin-top: 5px;">
-                      <option value="">Aguardando Bancos...</option>
-                  </select>
+                  <div style="display: flex; gap: 5px; margin-top: 5px;">
+                      <select id="bancoSaripan" style="width: 100%; padding: 8px; border: 1px solid #a5d6a7; border-radius: 4px; background: white;">
+                          <option value="">Aguardando Bancos...</option>
+                      </select>
+                      <button style="background: #2e7d32; color: white; border: none; border-radius: 4px; padding: 0 15px; cursor: pointer; font-weight: bold; font-size: 12px;" onclick="salvarBancoPadraoSaripan()">💾 Salvar</button>
+                  </div>
               </div>
 
               <div class="form-box">
@@ -320,7 +323,36 @@
 
   <!-- CONTAINER PRINT -->
   <div id="print-container" style="position: absolute; top: -9999px; left: -9999px;">
-      <!-- (Omitido para manter curto, mantenha o seu print-container intacto) -->
+      <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
+          <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório</h1>
+          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
+              <div>Prestador: João Batista Rosa</div>
+              <div id="print-ref">Referência: --</div>
+          </div>
+          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 30px;">
+              <div style="font-weight: bold;">Resumo do Período:</div>
+              <div id="print-resumo"></div>
+              <div style="font-weight: bold; margin-top: 15px; font-size: 20px;" id="print-total-diarias">Total: -- diárias a receber</div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+              <thead>
+                  <tr style="background-color: #00AEEF; color: #000;">
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Data</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Dia</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Tipo</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Detalhes</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Valor</th>
+                  </tr>
+              </thead>
+              <tbody id="print-tbody"></tbody>
+              <tfoot>
+                  <tr>
+                      <td colspan="4" style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 18px; border: none;">Valor Total:</td>
+                      <td style="padding: 15px 12px; font-weight: bold; font-size: 18px; border: none; text-align: left;" id="print-valor-total">R$ 0.00</td>
+                  </tr>
+              </tfoot>
+          </table>
+      </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
