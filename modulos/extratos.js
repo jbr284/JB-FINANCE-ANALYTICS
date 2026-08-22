@@ -14,7 +14,7 @@ const CATEGORIAS_PADRAO = [
     "Educação"
 ];
 
-// Variáveis globais para armazenar os dados exatos na memória
+// Variáveis globais para armazenar os dados na memória
 window.transacoesExtratoAtual = [];
 window.listaLancamentosExtratos = [];
 window.chartPizzaInstance = null;
@@ -30,7 +30,7 @@ window.carregarLancamentosExtratos = async () => {
     }
 };
 
-// O Robô de Processamento Profissional
+// O Robô de Processamento Universal
 window.processarCSV = () => {
     const bancoSelecionado = document.getElementById('bancoExtratoUpload').value;
     const fileInput = document.getElementById('arquivoCSV');
@@ -44,7 +44,7 @@ window.processarCSV = () => {
         encoding: "ISO-8859-1", 
         skipEmptyLines: true,
         complete: function(results) {
-            analisarDadosBradescoReal(results.data, bancoSelecionado);
+            analisarDadosBancarios(results.data, bancoSelecionado);
         },
         error: function(err) {
             alert("Erro ao ler o arquivo: " + err);
@@ -52,10 +52,11 @@ window.processarCSV = () => {
     });
 };
 
-function analisarDadosBradescoReal(linhasArray, idBanco) {
+// Cérebro Analítico Universal (Bradesco & Mercado Pago)
+function analisarDadosBancarios(linhasArray, idBanco) {
     let transacoesExtraidas = [];
 
-    const parseValorBradesco = (val) => {
+    const parseValor = (val) => {
         if (!val || typeof val !== 'string') return 0;
         let str = val.replace(/R\$/g, '').trim();
         if (str === "" || str === "-" || str === "0,00" || str === "0.00") return 0;
@@ -81,32 +82,48 @@ function analisarDadosBradescoReal(linhasArray, idBanco) {
 
         let dataStr = colunas[0] ? colunas[0].trim() : "";
         
+        // Se a linha começar com uma data válida
         if (dataStr.match(/^\d{2}\/\d{2}\/\d{2}/)) {
             let historico = colunas[1] ? colunas[1].trim() : "Sem descrição";
-            
-            if (i + 1 < linhasArray.length) {
-                let proximaLinha = linhasArray[i + 1];
-                let proximaData = proximaLinha[0] ? proximaLinha[0].trim() : "";
-                if (!proximaData.match(/^\d{2}\/\d{2}\/\d{2}/)) {
-                    let complemento = proximaLinha[1] || proximaLinha[0];
-                    if (complemento && complemento.trim() !== "") {
-                        historico += " - " + complemento.trim();
-                    }
-                }
-            }
-
-            let valCredito = parseValorBradesco(colunas[3]);
-            let valDebito = parseValorBradesco(colunas[4]);
-
             let valorFinal = 0;
             let tipoTransacao = "credito";
 
-            if (valCredito > 0) {
-                valorFinal = valCredito;
-                tipoTransacao = "credito";
-            } else if (valDebito !== 0) {
-                valorFinal = -Math.abs(valDebito);
-                tipoTransacao = "debito";
+            // --- INTELIGÊNCIA ARTIFICIAL: DETEÇÃO DE FORMATO ---
+            
+            // 1. MODO BRADESCO (Formato Complexo: 5+ Colunas)
+            if (colunas.length >= 5) {
+                // Junta a linha de baixo (complemento)
+                if (i + 1 < linhasArray.length) {
+                    let proximaLinha = linhasArray[i + 1];
+                    let proximaData = proximaLinha[0] ? proximaLinha[0].trim() : "";
+                    if (!proximaData.match(/^\d{2}\/\d{2}\/\d{2}/)) {
+                        let complemento = proximaLinha[1] || proximaLinha[0];
+                        if (complemento && complemento.trim() !== "") {
+                            historico += " - " + complemento.trim();
+                        }
+                    }
+                }
+
+                let valCredito = parseValor(colunas[3]);
+                let valDebito = parseValor(colunas[4]);
+
+                if (valCredito > 0) {
+                    valorFinal = valCredito;
+                    tipoTransacao = "credito";
+                } else if (valDebito !== 0) {
+                    valorFinal = -Math.abs(valDebito);
+                    tipoTransacao = "debito";
+                }
+            } 
+            // 2. MODO MERCADO PAGO / NUBANK (Formato Simples: 3 ou 4 Colunas)
+            else {
+                // A coluna 2 é onde está o valor real, com o seu sinal de positivo ou negativo!
+                let valUnico = parseValor(colunas[2]);
+                
+                if (valUnico !== 0) {
+                    valorFinal = valUnico;
+                    tipoTransacao = valUnico < 0 ? "debito" : "credito";
+                }
             }
 
             if (valorFinal !== 0) {
@@ -114,7 +131,7 @@ function analisarDadosBradescoReal(linhasArray, idBanco) {
                 transacoesExtraidas.push({
                     data: dataStr,
                     descricao: historico,
-                    valor: valorFinal, // O número real puro e correto!
+                    valor: valorFinal, // Matemático e exato
                     tipo: tipoTransacao,
                     categoriaSugerida: categoriaSugerida,
                     idBanco: idBanco
@@ -123,7 +140,6 @@ function analisarDadosBradescoReal(linhasArray, idBanco) {
         }
     }
 
-    // Salva na memória do sistema para usarmos na hora de gravar no Firebase
     window.transacoesExtratoAtual = transacoesExtraidas;
     renderizarTabelaConciliacao(transacoesExtraidas);
 }
@@ -190,7 +206,6 @@ function renderizarTabelaConciliacao(transacoes) {
     window.mostrarToast(`Sucesso! ${transacoes.length} transações prontas para salvar.`);
 }
 
-// A Função Real de Gravação no Firebase (Lê da memória e não da tela!)
 window.salvarEConciliarExtrato = async () => {
     const bancoId = document.getElementById('bancoExtratoUpload').value;
     if (!bancoId) return alert("Selecione a conta bancária de origem.");
@@ -203,7 +218,6 @@ window.salvarEConciliarExtrato = async () => {
 
     window.mostrarToast("Salvando transações no Firebase...");
 
-    // Pega as linhas da tabela apenas para descobrir qual categoria o utilizador escolheu
     const linhasTabela = document.querySelectorAll('#tabela-conciliacao-container tbody tr');
 
     try {
@@ -227,7 +241,7 @@ window.salvarEConciliarExtrato = async () => {
                 idBanco: bancoId,
                 data: t.data,
                 descricao: t.descricao,
-                valor: t.valor, // Puxa o float perfeito gravado na memória (-15.01)
+                valor: t.valor, // Mantém o número exato e puro!
                 tipo: t.tipo,
                 categoria: categoriaFinal,
                 timestamp: Date.now()
@@ -250,11 +264,10 @@ window.salvarEConciliarExtrato = async () => {
 
     } catch (e) {
         console.error("Erro ao salvar no Firebase:", e);
-        alert("Ocorreu um erro ao salvar as transações. Verifique a consola.");
+        alert("Ocorreu um erro ao salvar as transações.");
     }
 };
 
-// Motor de Cálculo e Renderização dos Relatórios Consolidados (Aba 3)
 window.renderizarRelatoriosConsolidados = () => {
     const elSaldo = document.getElementById('relatorio-saldo-total');
     const elDespesas = document.getElementById('relatorio-total-despesas');
@@ -291,7 +304,6 @@ window.renderizarRelatoriosConsolidados = () => {
     elSaldo.innerText = saldoRemanescente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     elDespesas.innerText = totalDebitos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    // Renderiza Gráfico de Pizza (Chart.js)
     const ctxPizza = document.getElementById('grafico-despesas-pizza');
     if (ctxPizza) {
         if (window.chartPizzaInstance) {
@@ -337,7 +349,6 @@ window.renderizarRelatoriosConsolidados = () => {
         }
     }
 
-    // Tabela Detalhada de Categorias
     if (tabelaContainer) {
         let htmlTab = `
             <table style="width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 15px;">
@@ -369,7 +380,6 @@ window.renderizarRelatoriosConsolidados = () => {
         tabelaContainer.innerHTML = htmlTab;
     }
 
-    // Lista de Lançamentos Gravados
     if (listaContainer) {
         if (window.listaLancamentosExtratos.length === 0) {
             listaContainer.innerHTML = "<p style='text-align:center; color:#999; font-size:13px;'>Nenhum lançamento conciliado ainda.</p>";
