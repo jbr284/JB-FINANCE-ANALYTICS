@@ -12,7 +12,7 @@ const CATEGORIAS_PADRAO = [
     "Educação"
 ];
 
-// O Robô de Processamento Profissional para o Bradesco Real
+// O Robô de Processamento Definitivo para o Bradesco
 window.processarCSV = () => {
     const bancoSelecionado = document.getElementById('bancoExtratoUpload').value;
     const fileInput = document.getElementById('arquivoCSV');
@@ -26,7 +26,7 @@ window.processarCSV = () => {
         encoding: "ISO-8859-1", 
         skipEmptyLines: true,
         complete: function(results) {
-            analisarDadosBradescoReal(results.data, bancoSelecionado);
+            processarExtratoBradesco(results.data, bancoSelecionado);
         },
         error: function(err) {
             alert("Erro ao ler o arquivo: " + err);
@@ -34,79 +34,114 @@ window.processarCSV = () => {
     });
 };
 
-function analisarDadosBradescoReal(linhasArray, idBanco) {
+function processarExtratoBradesco(linhasArray, idBanco) {
     let transacoesExtraidas = [];
-    let dadosIniciaram = false;
 
-    // Função de limpeza de valores monetários do Bradesco (ex: "- 16,74" ou "0,01")
-    const parseValorBradesco = (val) => {
-        if (!val || typeof val !== 'string') return 0;
-        let str = val.replace(/R\$/g, '').trim();
-        if (str === "" || str === "-" || str === "0,00" || str === "0.00") return 0;
+    // Limpa e converte o formato monetário brasileiro para float
+    const converterValor = (str) => {
+        if (!str || typeof str !== 'string') return 0;
+        let limpo = str.replace(/R\$/g, '').trim();
+        if (limpo === "" || limpo === "-" || limpo === "0,00" || limpo === "0.00") return 0;
         
         // Remove pontos de milhares e troca vírgula por ponto
-        str = str.replace(/\./g, '').replace(',', '.');
-        return parseFloat(str) || 0;
+        limpo = limpo.replace(/\./g, '').replace(',', '.');
+        return parseFloat(limpo) || 0;
     };
+
+    // Expressão para validar se uma string começa com data (DD/MM/YY ou DD/MM/YYYY)
+    const regexData = /^\d{2}\/\d{2}\/\d{2,4}/;
 
     for (let i = 0; i < linhasArray.length; i++) {
         const colunas = linhasArray[i];
         
-        // 1. Procura a linha de cabeçalho para saber onde começam os dados
-        if (!dadosIniciaram) {
-            const linhaStr = colunas.join(' ').toUpperCase();
-            if (linhaStr.includes('DATA') && (linhaStr.includes('HISTORICO') || linhaStr.includes('CREDITO'))) {
-                dadosIniciaram = true;
+        if (!colunas || colunas.length === 0) continue;
+
+        // Procura em qual coluna está a data
+        let colDataIndex = -1;
+        for (let c = 0; c < colunas.length; c++) {
+            if (colunas[c] && regexData.test(colunas[c].trim())) {
+                colDataIndex = c;
+                break;
             }
-            continue;
         }
 
-        // 2. Processa as linhas de dados (Validando se a primeira coluna é uma data DD/MM/YY)
-        if (dadosIniciaram && colunas.length >= 5) {
-            let dataStr = colunas[0] ? colunas[0].trim() : "";
+        // Se encontrou uma linha com data
+        if (colDataIndex !== -1) {
+            let dataStr = colunas[colDataIndex].trim();
             
-            // Se começar com data válida
-            if (dataStr.match(/^\d{2}\/\d{2}\/\d{2}/)) {
-                let historico = colunas[1] ? colunas[1].trim() : "Sem descrição";
-                
-                // Se houver uma linha logo abaixo com complemento (ex: "Mercado Villa"), junta à descrição
-                if (i + 1 < linhasArray.length) {
-                    let proximaLinha = linhasArray[i + 1];
-                    // Se a próxima linha NÃO começa com data, é a continuação do histórico
-                    if (proximaLinha[0] && !proximaLinha[0].match(/^\d{2}\/\d{2}\/\d{2}/)) {
-                        let complemento = proximaLinha[1] || proximaLinha[0];
-                        if (complemento && complemento.trim() !== "") {
-                            historico += " - " + complemento.trim();
-                        }
+            // Ignora linhas de saldo ou cabeçalhos residuais
+            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO')) {
+                continue;
+            }
+
+            // Descrição (Historico costuma estar logo após a data)
+            let historico = "Sem descrição";
+            if (colunas.length > colDataIndex + 1) {
+                for (let d = colDataIndex + 1; d < colunas.length; d++) {
+                    let texto = colunas[d] ? colunas[d].trim() : "";
+                    // Se não for um número de documento puro ou valor, é a descrição
+                    if (texto !== "" && isNaN(converterValor(texto))) {
+                        historico = texto;
+                        break;
                     }
                 }
+            }
 
-                // Estrutura fixa do Bradesco:
-                // Coluna 3 = Crédito (R$)
-                // Coluna 4 = Débito (R$)
-                let valCredito = parseValorBradesco(colunas[3]);
-                let valDebito = parseValorBradesco(colunas[4]);
+            // Tratamento da linha seguinte caso exista complemento (ex: Mercado Villa)
+            if (i + 1 < linhasArray.length) {
+                let proximaLinha = linhasArray[i + 1];
+                let temDataProxima = proximaLinha.some(el => el && regexData.test(el.trim()));
+                if (!temDataProxima && proximaLinha.length >= 2) {
+                    let complemento = proximaLinha[1] || proximaLinha[0];
+                    if (complemento && complemento.trim() !== "" && isNaN(converterValor(complemento))) {
+                        historico += " - " + complemento.trim();
+                    }
+                }
+            }
 
+            // Varredura de valores monetários na linha
+            let valoresEncontrados = [];
+            for (let j = 0; j < colunas.length; j++) {
+                if (j === colDataIndex) continue;
+                let valNum = converterValor(colunas[j]);
+                // Ignora números que parecem ser códigos de documento (ex: 6 dígitos inteiros sem vírgula)
+                let textoBruto = colunas[j] ? colunas[j].trim() : "";
+                if (valNum !== 0 && !isNaN(valNum)) {
+                    // No Bradesco, o Docto é um número inteiro sem vírgula. Valores monetários têm vírgula ou são decimais.
+                    if (textoBruto.includes(',') || textoBruto.includes('.')) {
+                        valoresEncontrados.push({ coluna: j, valor: valNum, texto: textoBruto });
+                    }
+                }
+            }
+
+            if (valoresEncontrados.length > 0) {
                 let valorFinal = 0;
-                let tipoTransacao = "credito";
+                let tipo = "credito";
 
-                if (valCredito > 0) {
-                    valorFinal = valCredito;
-                    tipoTransacao = "credito";
-                } else if (valDebito !== 0) {
-                    valorFinal = -Math.abs(valDebito); // Garante que débito seja negativo
-                    tipoTransacao = "debito";
+                // Se houver sinal explícito de menos no texto original, é débito
+                let temNegativo = valoresEncontrados.some(v => v.texto.includes('-'));
+                
+                // Pega o valor monetário (se houver mais de um, o último antes do saldo costuma ser o valor da transação)
+                // Vamos pegar o primeiro valor válido que tenha ponto ou vírgula decimal
+                let transacaoValida = valoresEncontrados[0].valor;
+                
+                // Se o histórico indica compra/pagamento ou se tem sinal negativo
+                let histUpper = historico.toUpperCase();
+                if (temNegativo || histUpper.includes('COMPRA') || histUpper.includes('PAG') || histUpper.includes('DEB') || histUpper.includes('PIX QRS') || histUpper.includes('SAQUE')) {
+                    valorFinal = -Math.abs(transacaoValida);
+                    tipo = "debito";
+                } else {
+                    valorFinal = Math.abs(transacaoValida);
+                    tipo = "credito";
                 }
 
-                if (valorFinal !== 0) {
-                    transacoesExtraidas.push({
-                        data: dataStr,
-                        descricao: historico,
-                        valor: valorFinal,
-                        tipo: tipoTransacao,
-                        idBanco: idBanco
-                    });
-                }
+                transacoesExtraidas.push({
+                    data: dataStr,
+                    descricao: historico,
+                    valor: valorFinal,
+                    tipo: tipo,
+                    idBanco: idBanco
+                });
             }
         }
     }
@@ -173,7 +208,7 @@ function renderizarTabelaConciliacao(transacoes) {
     `;
 
     container.innerHTML = html;
-    window.mostrarToast(`Sucesso! ${transacoes.length} transações do Bradesco carregadas perfeitamente.`);
+    window.mostrarToast(`Sucesso! ${transacoes.length} transações carregadas com precisão.`);
 }
 
 window.atualizarSelectBancosUpload = () => {
