@@ -1,4 +1,6 @@
 // === modulos/extratos.js ===
+import { db } from './firebase-config.js';
+import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const CATEGORIAS_PADRAO = [
     "Outros",
@@ -64,11 +66,9 @@ function analisarDadosBradescoReal(linhasArray, idBanco) {
 
         let dataStr = colunas[0] ? colunas[0].trim() : "";
         
-        // Verifica se a linha começa com uma data válida (DD/MM/YY)
         if (dataStr.match(/^\d{2}\/\d{2}\/\d{2}/)) {
             let historico = colunas[1] ? colunas[1].trim() : "Sem descrição";
             
-            // CAPTURA COMPLETA DA SEGUNDA LINHA (Complemento do Bradesco, ex: "Mercado Villa")
             if (i + 1 < linhasArray.length) {
                 let proximaLinha = linhasArray[i + 1];
                 let proximaData = proximaLinha[0] ? proximaLinha[0].trim() : "";
@@ -122,7 +122,7 @@ function renderizarTabelaConciliacao(transacoes) {
 
     let html = `
         <h4 style="color:#002f6c; margin-bottom: 10px; margin-top: 20px;">Pré-visualização do Extrato (${transacoes.length} transações encontradas)</h4>
-        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Os <b>Créditos</b> são entradas. Classifique as suas <b>Despesas (Débitos)</b> abaixo.</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Os <b>Créditos</b> são entradas. Classifique as suas <b>Despesas (Débitos)</b> abaixo e clique em salvar.</p>
         <div style="background: white; border: 1px solid #cfd8dc; border-radius: 8px; overflow-x: auto; max-height: 400px;">
         <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
             <thead>
@@ -167,12 +167,71 @@ function renderizarTabelaConciliacao(transacoes) {
             </tbody>
         </table>
         </div>
-        <button class="btn-action btn-green" style="margin-top: 20px; font-size: 16px; padding: 15px;" onclick="alert('Salvar no Firebase: Funcionalidade em construção no próximo passo!')">💾 Salvar e Conciliar Despesas</button>
+        <button class="btn-action btn-green" style="margin-top: 20px; font-size: 16px; padding: 15px;" onclick="window.salvarEConciliarExtrato()">💾 Salvar e Conciliar Despesas</button>
     `;
 
     container.innerHTML = html;
-    window.mostrarToast(`Sucesso! ${transacoes.length} transações completas carregadas.`);
+    window.mostrarToast(`Sucesso! ${transacoes.length} transações prontas para salvar.`);
 }
+
+// A Função Real de Gravação no Firebase
+window.salvarEConciliarExtrato = async () => {
+    const bancoId = document.getElementById('bancoExtratoUpload').value;
+    if (!bancoId) return alert("Selecione a conta bancária de origem.");
+
+    const linhas = document.querySelectorAll('#tabela-conciliacao-container tbody tr');
+    if (linhas.length === 0) return alert("Nenhuma transação para salvar.");
+
+    if (!confirm(`Deseja salvar e conciliar estas ${linhas.length} transações no banco de dados?`)) return;
+
+    window.mostrarToast("Salvando transações no Firebase...");
+
+    try {
+        for (let i = 0; i < linhas.length; i++) {
+            const tr = linhas[i];
+            const data = tr.cells[0].innerText.trim();
+            const descricao = tr.cells[1].innerText.trim();
+            const valorTexto = tr.cells[2].innerText.trim();
+            
+            const ehDebito = valorTexto.includes('🔻');
+            const numLimpo = valorTexto.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+            let valorNum = parseFloat(numLimpo) || 0;
+            if (ehDebito) valorNum = -Math.abs(valorNum);
+            else valorNum = Math.abs(valorNum);
+
+            const selectCat = tr.querySelector('.select-categoria');
+            const categoria = selectCat ? selectCat.value : 'Entrada';
+
+            const idTransacao = `TRANS-${Date.now()}-${i}`;
+            const transacaoObj = {
+                id: idTransacao,
+                idBanco: bancoId,
+                data: data,
+                descricao: descricao,
+                valor: valorNum,
+                tipo: ehDebito ? 'debito' : 'credito',
+                categoria: categoria,
+                timestamp: Date.now()
+            };
+
+            await setDoc(doc(db, "extratos_lancamentos", idTransacao), transacaoObj);
+        }
+
+        window.mostrarToast("✅ Todas as transações foram salvas com sucesso!");
+        document.getElementById('tabela-conciliacao-container').innerHTML = `
+            <div style="background: #e8f5e9; border: 1px solid #a5d6a7; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
+                <h4 style="color: #2e7d32; margin-bottom: 5px;">🎉 Conciliação Concluída com Sucesso!</h4>
+                <p style="font-size: 13px; color: #555;">As despesas e entradas foram gravadas no seu ERP e já estão prontas para alimentar os relatórios financeiros.</p>
+            </div>
+        `;
+
+    }armazemValido => {
+        // catch error block handled cleanly below
+    } catch (e) {
+        console.error("Erro ao salvar no Firebase:", e);
+        alert("Ocorreu um erro ao salvar as transações. Verifique a consola.");
+    }
+};
 
 window.atualizarSelectBancosUpload = () => {
     const selectUpload = document.getElementById('bancoExtratoUpload');
