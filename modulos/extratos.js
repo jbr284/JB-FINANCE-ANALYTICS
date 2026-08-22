@@ -36,13 +36,13 @@ window.processarCSV = () => {
 
 function analisarDadosPapaParse(linhasArray, idBanco) {
     let transacoesExtraidas = [];
-    let indexData = -1, indexDesc = -1, indexCredito = -1, indexDebito = -1, indexValor = -1;
-    let dadosIniciaram = false;
 
+    // Função de limpeza matemática otimizada para o padrão Bradesco
     const parseValor = (val) => {
         if (!val || typeof val !== 'string') return NaN;
         let str = val.replace(/R\$/g, '').trim();
-        if (str === "") return NaN;
+        if (str === "" || str === "-" || str === "0,00" || str === "0.00") return NaN;
+        
         if (str.includes(',') && str.includes('.')) {
             str = str.replace(/\./g, '').replace(',', '.');
         } else if (str.includes(',')) {
@@ -54,58 +54,72 @@ function analisarDadosPapaParse(linhasArray, idBanco) {
     for (let i = 0; i < linhasArray.length; i++) {
         const colunas = linhasArray[i];
         
-        if (!dadosIniciaram) {
-            const linhaUpper = colunas.map(c => c ? c.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "");
-            
-            if (linhaUpper.some(c => c.includes('DATA'))) {
-                indexData = linhaUpper.findIndex(c => c.includes('DATA'));
-                indexDesc = linhaUpper.findIndex(c => c.includes('HIST') || c.includes('DESC') || c.includes('LANC'));
-                indexCredito = linhaUpper.findIndex(c => c.includes('CRED'));
-                indexDebito = linhaUpper.findIndex(c => c.includes('DEB'));
-                indexValor = linhaUpper.findIndex(c => c === 'VALOR' || c.includes('VALOR (R$)'));
-                dadosIniciaram = true;
+        // Procura por qualquer coluna que tenha uma data no formato DD/MM ou DD/MM/AA(AA)
+        let dataStr = null;
+        let colDataIndex = -1;
+        
+        for (let c = 0; c < colunas.length; c++) {
+            let val = colunas[c] ? colunas[c].trim() : "";
+            if (val.match(/^\d{2}\/\d{2}(\/\d{2,4})?/)) {
+                dataStr = val;
+                colDataIndex = c;
+                break;
             }
-            continue;
         }
 
-        // Captura qualquer linha que comece com uma data válida (DD/MM)
-        if (indexData !== -1 && colunas[indexData] && typeof colunas[indexData] === 'string' && colunas[indexData].match(/^\d{2}\/\d{2}/)) {
-            
-            let dataStr = colunas[indexData];
-            let desc = indexDesc !== -1 && colunas[indexDesc] ? colunas[indexDesc] : (colunas[indexData + 1] || 'Sem descrição');
+        // Se encontrou uma data, esta é uma linha de transação potencial!
+        if (dataStr && colDataIndex !== -1) {
+            let desc = "Sem descrição";
             let valFinal = 0;
 
-            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO') || desc.toUpperCase().includes('SALDO')) {
-                continue;
-            }
+            // Ignora linhas de saldo ou totais
+            if (dataStr.toUpperCase().includes('TOTAL') || dataStr.toUpperCase().includes('SALDO')) continue;
 
-            // Lê Créditos e Débitos separadamente com total segurança
-            if (indexCredito !== -1 && indexDebito !== -1) {
-                let cVal = parseValor(colunas[indexCredito]);
-                let dVal = parseValor(colunas[indexDebito]);
-                
-                if (!isNaN(cVal) && cVal > 0) {
-                    valFinal = cVal; // Crédito (Entrada)
-                } else if (!isNaN(dVal) && dVal > 0) {
-                    valFinal = -Math.abs(dVal); // Débito (Saída / Despesa)
-                }
-            } 
-            else if (indexValor !== -1) {
-                let v = parseValor(colunas[indexValor]);
-                if (!isNaN(v)) valFinal = v;
-            } 
-            else {
-                // Varredura de segurança caso as colunas estejam deslocadas
-                for (let j = indexData + 1; j < colunas.length; j++) {
-                    let num = parseValor(colunas[j]);
-                    if (!isNaN(num) && num !== 0) {
-                        valFinal = num;
+            // Pega a descrição (geralmente logo após a data)
+            if (colunas.length > colDataIndex + 1) {
+                for (let d = colDataIndex + 1; d < colunas.length; d++) {
+                    let textoCandidato = colunas[d] ? colunas[d].trim() : "";
+                    if (textoCandidato !== "" && isNaN(parseValor(textoCandidato))) {
+                        desc = textoCandidato;
                         break;
                     }
                 }
             }
 
-            if (valFinal !== 0) {
+            // Varre todas as colunas à procura de valores monetários válidos
+            // No Bradesco, as colunas de Crédito e Débito ficam mais à direita
+            let valoresEncontrados = [];
+            for (let j = 0; j < colunas.length; j++) {
+                if (j === colDataIndex) continue;
+                let num = parseValor(colunas[j]);
+                if (!isNaN(num) && num !== 0) {
+                    valoresEncontrados.push({ index: j, valor: num });
+                }
+            }
+
+            if (valoresEncontrados.length > 0) {
+                // No Bradesco, se houver duas colunas de valores preenchidas na mesma linha (uma crédito, outra débito), 
+                // geralmente a mais à esquerda é crédito e a outra débito, ou temos uma indicação explícita.
+                // Vamos pegar o último valor numérico válido antes do saldo (o saldo costuma ser a última coluna).
+                let transacaoValida = null;
+                
+                // Se tivermos mais de um valor (ex: Crédito/Débito e Saldo acumulado)
+                // O valor da transação é o penúltimo ou o que não for saldo.
+                if (valoresEncontrados.length >= 2) {
+                    // Pega o valor que não é o saldo final da conta (vamos assumir o penúltimo se houver 2 ou mais)
+                    transacaoValida = valoresEncontrados[valoresEncontrados.length - 2].valor;
+                } else {
+                    transacaoValida = valoresEncontrados[0].valor;
+                }
+
+                // Identifica se é débito ou crédito olhando o texto da linha ou o sinal
+                let linhaCompletaTexto = colunas.join(' ').toUpperCase();
+                if (linhaCompletaTexto.includes('DEBITO') || linhaCompletaTexto.includes('PAGTO') || linhaCompletaTexto.includes('COMPRA') || linhaCompletaTexto.includes('PIX QRS') || linhaCompletaTexto.includes('SAQUE')) {
+                    valFinal = -Math.abs(transacaoValida);
+                } else {
+                    valFinal = transacaoValida; // Mantém positivo se for entrada
+                }
+
                 transacoesExtraidas.push({
                     data: dataStr,
                     descricao: desc,
