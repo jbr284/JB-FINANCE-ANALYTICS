@@ -27,6 +27,7 @@ auth.onAuthStateChanged((user) => {
         
         if (window.carregarTodosOsDados) window.carregarTodosOsDados();
         if (window.carregarBancos) window.carregarBancos();
+        if (window.carregarLancamentosExtratos) window.carregarLancamentosExtratos();
     } else {
         document.getElementById('tela-login').classList.remove('hidden');
         document.getElementById('tela-hub').classList.add('hidden');
