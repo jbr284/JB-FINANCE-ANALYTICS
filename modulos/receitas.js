@@ -1,19 +1,49 @@
 // === modulos/receitas.js ===
 import { db } from './firebase-config.js';
-import { collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { MESES } from './ui.js';
 
 // --- FUNÇÕES GERAIS ---
 window.carregarTodosOsDados = async () => {
     try {
+        // Carrega registros Saripan
         const snapSari = await getDocs(collection(db, "apontamentos"));
         window.registros = snapSari.docs.map(doc => doc.data());
         
+        // Carrega registros Modular
         const snapMod = await getDocs(collection(db, "renda_modular"));
         window.registrosModular = snapMod.docs.map(doc => doc.data());
 
+        // Carrega registros Renda Extra
         const snapExtra = await getDocs(collection(db, "renda_extra"));
         window.registrosExtra = snapExtra.docs.map(doc => doc.data());
+
+        // Carrega Configuração Fixa (Salário Base Modular)
+        try {
+            const confSnap = await getDoc(doc(db, "configuracoes", "modular"));
+            if (confSnap.exists()) {
+                const confData = confSnap.data();
+                if (confData.salarioBase) {
+                    localStorage.setItem('modular_salario_base', confData.salarioBase);
+                    const elBase = document.getElementById('valorSalarioBase');
+                    if (elBase) {
+                        elBase.value = confData.salarioBase;
+                        window.atualizarPreviewModular();
+                    }
+                }
+            } else {
+                const salvoLocal = localStorage.getItem('modular_salario_base');
+                if (salvoLocal) {
+                    const elBase = document.getElementById('valorSalarioBase');
+                    if (elBase) {
+                        elBase.value = salvoLocal;
+                        window.atualizarPreviewModular();
+                    }
+                }
+            }
+        } catch (errConf) {
+            console.log("Aviso config modular:", errConf);
+        }
 
         window.renderizarApontamentosSaripan(); 
         window.atualizarRodapeDinamico(); 
@@ -296,7 +326,6 @@ window.adicionarRegistroModular = async () => {
     const mesStr = document.getElementById('mesModular').value; 
     const banco = document.getElementById('bancoModular') ? document.getElementById('bancoModular').value : '';
     
-    // Novas variáveis
     const salarioBase = parseFloat(document.getElementById('valorSalarioBase').value) || 0;
     const adiantamentoCalculado = salarioBase * 0.40;
     const salarioTela = parseFloat(document.getElementById('valorSalario').value) || 0;
@@ -315,7 +344,7 @@ window.adicionarRegistroModular = async () => {
         ano: ano, 
         mes: mesNum - 1, 
         bancoDestino: banco, 
-        salarioBase: salarioBase, // Guarda o base no BD
+        salarioBase: salarioBase,
         adiantamento: adiantamentoCalculado, 
         salario: salarioTela, 
         outras: outrasTela, 
@@ -323,10 +352,19 @@ window.adicionarRegistroModular = async () => {
         total: totalFinal 
     };
     try {
+        // Salva o registro mensal
         await setDoc(doc(db, "renda_modular", idUnico), novoReg, { merge: true });
+        
+        // Salva a configuração fixa global do Salário Base no Firestore e localStorage
+        if (salarioBase > 0) {
+            await setDoc(doc(db, "configuracoes", "modular"), { salarioBase: salarioBase }, { merge: true });
+            localStorage.setItem('modular_salario_base', salarioBase.toString());
+        }
+
         window.registrosModular = window.registrosModular.filter(r => r.id !== idUnico);
         window.registrosModular.push(novoReg);
-        window.renderizarHistoricoModular(); window.mostrarToast("Mês Modular Salvo!");
+        window.renderizarHistoricoModular(); 
+        window.mostrarToast("Mês Modular e Salário Base Salvos!");
     } catch(e) { console.error(e); }
 };
 
