@@ -5,7 +5,13 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from
 import { getFirestore, collection, getDocs, getDoc, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // !!! COLOQUE A SUA CONFIGURAÇÃO DO FIREBASE AQUI !!!
-const firebaseConfig = {
+  const firebaseConfig = {
+  apiKey: "AIzaSyCNHOPKa320_cY0KUY8vBVVYRmcYkmWo0Y",
+  authDomain: "bd-saripan.firebaseapp.com",
+  projectId: "bd-saripan",
+  storageBucket: "bd-saripan.firebasestorage.app",
+  messagingSenderId: "545578993360",
+  appId: "1:545578993360:web:d410a5cbedd914ad3800d5"
   // cole as suas chaves do firebase
 };
 
