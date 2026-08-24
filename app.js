@@ -4,15 +4,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, collection, getDocs, getDoc, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// !!! COLOQUE A SUA CONFIGURAÇÃO DO FIREBASE AQUI !!!
-  const firebaseConfig = {
+// A SUA CONFIGURAÇÃO REAL DO FIREBASE
+const firebaseConfig = {
   apiKey: "AIzaSyCNHOPKa320_cY0KUY8vBVVYRmcYkmWo0Y",
   authDomain: "bd-saripan.firebaseapp.com",
   projectId: "bd-saripan",
   storageBucket: "bd-saripan.firebasestorage.app",
   messagingSenderId: "545578993360",
   appId: "1:545578993360:web:d410a5cbedd914ad3800d5"
-  // cole as suas chaves do firebase
 };
 
 const app = initializeApp(firebaseConfig);
@@ -131,7 +130,8 @@ window.preencherFormularioModular = () => {
     const adiantCalculado = salarioBase * 0.40;
 
     if (reg) {
-        document.getElementById('viewAdiantamento').value = `R$ ${reg.adiantamento.toFixed(2)}`;
+        const adiantamento = parseFloat(reg.adiantamento) || 0;
+        document.getElementById('viewAdiantamento').value = `R$ ${adiantamento.toFixed(2)}`;
         document.getElementById('inputSalarioLiquido').value = reg.salario > 0 ? reg.salario : '';
         document.getElementById('inputExtras').value = reg.outras > 0 ? reg.outras : '';
         document.getElementById('descExtras').value = reg.nomeOutras || '';
@@ -220,15 +220,21 @@ window.renderizarHistoricoModular = () => {
         </thead><tbody>`;
         
     regs.forEach(r => { 
-        const tr = r.totalRemunerativo || 0;
-        const tg = r.totalGeral || 0;
+        // Proteção para registros antigos
+        const adiantamento = parseFloat(r.adiantamento) || 0;
+        const salario = parseFloat(r.salario) || 0;
+        const outras = parseFloat(r.outras) || 0;
+        const beneficios = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225;
+        const tr = parseFloat(r.totalRemunerativo) || (adiantamento + salario + outras);
+        const tg = parseFloat(r.totalGeral) || parseFloat(r.total) || (tr + beneficios);
+
         tableHtml += `
             <tr style="border-bottom: 1px solid #eceff1;">
                 <td style="padding: 10px 5px; text-align: left; font-weight: bold; color: #455a64;">${MESES[r.mes]} ${r.ano}</td>
-                <td class="esconder-valor" style="padding: 10px 5px;">R$ ${r.adiantamento.toFixed(2)}</td>
-                <td class="esconder-valor" style="padding: 10px 5px;">R$ ${r.salario.toFixed(2)}</td>
-                <td class="esconder-valor" style="padding: 10px 5px; color:#2e7d32; font-style: italic;">R$ ${r.beneficios.toFixed(2)}</td>
-                <td class="esconder-valor" style="padding: 10px 5px;" title="${r.nomeOutras || ''}">R$ ${r.outras.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 10px 5px;">R$ ${adiantamento.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 10px 5px;">R$ ${salario.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 10px 5px; color:#2e7d32; font-style: italic;">R$ ${beneficios.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 10px 5px;" title="${r.nomeOutras || ''}">R$ ${outras.toFixed(2)}</td>
                 <td class="esconder-valor" style="padding: 10px 5px; background: #e3f2fd; font-weight: bold; color: #1565c0;">R$ ${tr.toFixed(2)}</td>
                 <td class="esconder-valor" style="padding: 10px 5px; background: #e8f5e9; font-weight: bold; color: #1b5e20;">R$ ${tg.toFixed(2)}</td>
                 <td style="padding: 10px 5px;"><span style="color:red; cursor:pointer; font-size:14px;" onclick="window.excluirRegistroModular('${r.id}')">✖</span></td>
@@ -255,13 +261,19 @@ window.renderizarDashboardGeral = () => {
         return k;
     };
 
-    window.registros.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].saripan += r.total; });
+    window.registros.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].saripan += parseFloat(r.total) || 0; });
+    
     window.registrosModular.forEach(r => { 
         const k = initData(r.ano, r.mes); 
-        dadosGerais[k].modularRem += (r.totalRemunerativo || 0); 
-        dadosGerais[k].modularBen += (r.beneficios || 0); 
+        // Proteção para registros antigos
+        const rem = parseFloat(r.totalRemunerativo) || parseFloat(r.total) || 0;
+        const ben = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 0;
+        
+        dadosGerais[k].modularRem += rem; 
+        dadosGerais[k].modularBen += ben; 
     });
-    window.registrosExtra.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].extra += r.total; });
+    
+    window.registrosExtra.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].extra += parseFloat(r.total) || 0; });
 
     const anosOrdenados = Array.from(anosEncontrados).sort((a,b) => b-a);
     if(anosOrdenados.length === 0) { container.innerHTML = "<p style='text-align:center;'>Sem dados.</p>"; return; }
@@ -308,7 +320,7 @@ window.renderizarDashboardGeral = () => {
                 const chart = new Chart(ctx, { 
                     type: 'bar', 
                     data: { labels: labels, datasets: [ 
-                        { label: 'Mod (Remunerativo)', data: dataModRem, backgroundColor: '#1565c0' }, 
+                        { label: 'Mod (Líquido+Adiant)', data: dataModRem, backgroundColor: '#1565c0' }, 
                         { label: 'Mod (Benefícios)', data: dataBen, backgroundColor: '#4dd0e1' }, 
                         { label: 'Saripan', data: dataSari, backgroundColor: '#43a047' }, 
                         { label: 'Extras', data: dataExtra, backgroundColor: '#fbc02d' }
@@ -372,9 +384,8 @@ window.renderizarHistoricoExtra = () => {
     container.innerHTML = `<div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;"><table style="width:100%; border-collapse:collapse; font-size: 13px;"><tbody>${htmlRows}</tbody></table></div>`;
 };
 
-
 // ==========================================
-// 5. MÓDULO SARIPAN (MANTIDO NA ÍNTEGRA E EXPANDIDO)
+// 5. MÓDULO SARIPAN (TOTAL E COMPLETO)
 // ==========================================
 window.obterPeriodo = (dataStr) => {
     const dateObj = new Date(dataStr);
