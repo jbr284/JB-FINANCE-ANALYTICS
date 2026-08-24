@@ -220,13 +220,18 @@ window.renderizarHistoricoModular = () => {
         </thead><tbody>`;
         
     regs.forEach(r => { 
-        // Proteção para registros antigos
         const adiantamento = parseFloat(r.adiantamento) || 0;
         const salario = parseFloat(r.salario) || 0;
         const outras = parseFloat(r.outras) || 0;
+        
+        // Garante os 1225 retroativos para meses antigos
         const beneficios = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225;
-        const tr = parseFloat(r.totalRemunerativo) || (adiantamento + salario + outras);
-        const tg = parseFloat(r.totalGeral) || parseFloat(r.total) || (tr + beneficios);
+        
+        // O total antigo era só o remunerativo
+        const tr = parseFloat(r.totalRemunerativo) || parseFloat(r.total) || (adiantamento + salario + outras);
+        
+        // Força a soma dos benefícios no total geral antigo
+        const tg = parseFloat(r.totalGeral) || (tr + beneficios);
 
         tableHtml += `
             <tr style="border-bottom: 1px solid #eceff1;">
@@ -265,9 +270,11 @@ window.renderizarDashboardGeral = () => {
     
     window.registrosModular.forEach(r => { 
         const k = initData(r.ano, r.mes); 
-        // Proteção para registros antigos
+        // O Remunerativo herda o total antigo
         const rem = parseFloat(r.totalRemunerativo) || parseFloat(r.total) || 0;
-        const ben = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 0;
+        
+        // Injeta os R$ 1.225 no gráfico para meses anteriores
+        const ben = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225;
         
         dadosGerais[k].modularRem += rem; 
         dadosGerais[k].modularBen += ben; 
@@ -385,7 +392,7 @@ window.renderizarHistoricoExtra = () => {
 };
 
 // ==========================================
-// 5. MÓDULO SARIPAN (TOTAL E COMPLETO)
+// 5. MÓDULO SARIPAN (COMPLETO)
 // ==========================================
 window.obterPeriodo = (dataStr) => {
     const dateObj = new Date(dataStr);
