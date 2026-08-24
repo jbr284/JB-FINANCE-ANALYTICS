@@ -1,0 +1,73 @@
+/* === ESTILOS GLOBAIS === */
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+
+/* === MODO PRIVACIDADE === */
+body.modo-privacidade .esconder-valor { filter: blur(6px); opacity: 0.6; pointer-events: none; user-select: none; transition: all 0.2s ease; }
+.esconder-valor { transition: all 0.2s ease; }
+
+/* === TELAS CENTRALIZADAS (LOGIN E HUB) === */
+.container-center { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #fff; width: 100%; position: absolute; top:0; left:0; z-index: 200; }
+.hidden { display: none !important; }
+
+/* === ESTRUTURA PRINCIPAL === */
+.container { background-color: #fff; max-width: 800px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0,0,0,0.05); position: relative; }
+.fixed-area { flex-shrink: 0; z-index: 10; background: white; }
+.scroll-content { flex-grow: 1; overflow-y: auto; background: #f0f2f5; position: relative; }
+
+/* === CABEÇALHO DO APLICATIVO (VOLTAR + TÍTULO) === */
+.app-header { background: #002f6c; color: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 20;}
+.app-title { font-size: 18px; font-weight: bold; margin: 0; text-transform: uppercase; letter-spacing: 1px;}
+.btn-nav-top { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+/* === NAVEGAÇÃO DE MÓDULOS === */
+.master-module { display: none; height: 100%; flex-direction: column; }
+.master-module.active { display: flex; }
+
+/* === ABAS INTERNAS (SARIPAN) === */
+.tabs-container { display: flex; background: #fff; border-bottom: 1px solid #ddd; }
+.tab-btn { flex: 1; padding: 15px 5px; border: none; background: none; font-size: 14px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: background 0.2s; }
+.tab-btn.active { color: #0d47a1; border-bottom: 3px solid #0d47a1; background: #f9f9f9; }
+.panel { display: none; padding: 15px; padding-bottom: 80px; animation: fadeIn 0.3s; }
+.panel.active { display: block; }
+
+/* === FORMULÁRIOS === */
+.form-box { background: #e3f2fd; padding: 20px; border-radius: 12px; border: 1px solid #bbdefb; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.form-title { margin-top: 0; color: #1565c0; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #bbdefb; padding-bottom: 8px; text-align: center; }
+.grid-input { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+label { font-size: 13px; font-weight: bold; color: #444; display: block; margin-bottom: 4px; }
+input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+.input-login { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; text-align: center;}
+
+/* === BOTOES === */
+.btn-action { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; font-size: 16px; margin-top: 15px; transition: transform 0.1s; }
+.btn-action:active { transform: scale(0.98); }
+.btn-green { background-color: #2e7d32; }
+.btn-big { padding: 15px 30px; font-size: 18px; margin: 10px; border-radius: 8px; border: none; color: white; width: 80%; max-width: 300px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2);}
+.btn-big:active { transform: scale(0.98); }
+
+/* === TOAST === */
+#toast { visibility: hidden; min-width: 250px; background-color: #2e7d32; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 3000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+#toast.show { visibility: visible; animation: fadein 0.4s, fadeout 0.4s 2.5s; }
+@keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+@keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+/* === ACORDEÃO E TABELAS === */
+.accordion-group { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; }
+.accordion-header { background: #f5f5f5; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-left: 5px solid #002f6c; }
+.accordion-title { font-weight: bold; color: #333; font-size: 15px; }
+.accordion-meta { font-size: 12px; color: #666; margin-top: 2px; }
+.accordion-content { display: none; padding: 0; }
+.accordion-content.open { display: block; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; background: white;}
+th, td { padding: 10px 5px; text-align: left; border-bottom: 1px solid #eee; }
+th { background: #eee; color: #555; font-size: 12px; text-transform: uppercase; }
+.td-valor { font-weight: bold; color: #2e7d32; text-align: right; }
+.total-row { background: #e8f5e9; font-weight: bold; }
+
+/* === DASHBOARDS === */
+.year-summary { background: #fff8e1; border: 1px solid #ffe0b2; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center; }
+.year-summary h4 { margin: 0; color: #f57c00; font-size: 14px; text-transform: uppercase; }
+.year-total-value { font-size: 24px; font-weight: bold; color: #333; margin-top: 5px; }
+.fin-table { width: 100%; border: 1px solid #ddd; }
+.fin-table th { background: #002f6c; color: white; }
+.fin-row-total { background: #fff3e0; font-weight: bold; color: #e65100; }

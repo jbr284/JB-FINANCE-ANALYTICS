@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JB Finance Analytics</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+  <meta name="theme-color" content="#002f6c">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="toast">✅ Operação realizada com sucesso!</div>
+
+  <div id="tela-login" class="container-center hidden">
+    <h1 style="color:#002f6c; font-size: 35px; margin-bottom: 5px; text-align: center;">JB Finance Analytics</h1>
+    <p style="color:#666; margin-bottom: 30px;">Acesso restrito</p>
+    <input type="email" id="emailLogin" class="input-login" placeholder="E-mail" autocomplete="username" style="max-width: 300px;">
+    <input type="password" id="senhaLogin" class="input-login" placeholder="Senha" autocomplete="current-password" style="max-width: 300px;">
+    <button class="btn-action btn-green" onclick="fazerLogin()" style="max-width: 300px;">Entrar</button>
+  </div>
+
+  <div id="tela-hub" class="container-center hidden">
+    <h2 style="color:#002f6c; margin-bottom: 10px;">JB Finance Analytics</h2>
+    <p style="color:#666; margin-bottom: 30px;">O que deseja acessar?</p>
+    
+    <button class="btn-big" style="background:#43a047;" onclick="abrirModulo('saripan')">🏢 Módulo SARIPAN</button>
+    <button class="btn-big" style="background:#1565c0;" onclick="abrirModulo('modular')">🏭 Módulo MODULAR</button>
+    <button class="btn-big" style="background:#f57c00; margin-top: 15px;" onclick="abrirModulo('geral')">📊 VISÃO GERAL</button>
+    
+    <button style="margin-top: 40px; padding: 10px 20px; background: transparent; border: 1px solid #ccc; color: #666; border-radius: 6px; cursor: pointer;" onclick="sairApp()">Sair da Conta</button>
+  </div>
+
+  <div id="app" class="container hidden">
+    
+    <div class="app-header">
+        <button class="btn-nav-top" onclick="voltarAoHub()">⬅ Voltar</button>
+        <div id="app-title" class="app-title">JB Finance Analytics</div>
+        <button id="btn-privacidade" class="btn-nav-top" onclick="togglePrivacidade()"></button>
+    </div>
+
+    <div id="module-saripan" class="master-module active">
+        <div class="fixed-area">
+            <div class="tabs-container">
+              <button id="btn-tab-registrar" class="tab-btn active" onclick="mudarAba('registrar')">⏱️ Registrar</button>
+              <button id="btn-tab-historico" class="tab-btn" onclick="mudarAba('historico')">📋 Histórico</button>
+              <button id="btn-tab-financeiro" class="tab-btn" onclick="mudarAba('financeiro')">💰 Financeiro</button>
+            </div>
+        </div>
+
+        <div class="scroll-content">
+            <div id="painel-registrar" class="panel active">
+              <div class="form-box">
+                <h3 class="form-title">Novo Apontamento</h3>
+                <label>Data do Serviço:</label>
+                <input type="date" id="dataServico" style="margin-bottom: 15px; padding: 15px; font-size: 16px;">
+                <div class="grid-input">
+                  <div>
+                    <label>Tipo:</label>
+                    <select id="tipoCarga"><option value="1">Normal</option><option value="2">Dupla</option></select>
+                  </div>
+                  <div>
+                    <label>Detalhes:</label>
+                    <select id="tipoDia"><option value="1">Dia Útil</option><option value="2">Domingo</option><option value="3">Feriado</option></select>
+                  </div>
+                </div>
+                <div class="grid-input">
+                  <div><label>Valor Base (R$):</label><input type="number" id="valorBase" value="130.00"></div>
+                  <div><label>Previsão:</label><input type="text" id="previewValor" class="esconder-valor" readonly style="background: #eee; font-weight: bold; color: #2e7d32;"></div>
+                </div>
+                <button class="btn-action btn-green" id="btn-salvar-registro" onclick="adicionarRegistro()">✅ Confirmar Apontamento</button>
+              </div>
+
+              <div id="rodape-dinamico" style="margin-top: 25px; padding: 0 10px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000; font-size: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <thead><tr style="background-color: #5b9bd5; color: white;"><th style="border: 1px solid #000; padding: 12px; font-weight: bold;">QTD de diárias</th><th style="border: 1px solid #000; padding: 12px; font-weight: bold;">Total (R$)</th></tr></thead>
+                    <tbody><tr><td id="rodape-qtd" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #333;">0</td><td id="rodape-total" class="esconder-valor" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #2e7d32;">R$ 0,00</td></tr></tbody>
+                </table>
+                <div id="rodape-ref" style="text-align: center; font-size: 13px; color: #666; margin-top: 8px; font-weight: bold;">Selecione uma data para ver o resumo.</div>
+              </div>
+            </div>
+
+            <div id="painel-historico" class="panel">
+                <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Registros e Relatórios</h3>
+                <div id="lista-quinzenas-container"></div>
+                <div id="msg-sem-dados" style="text-align:center; padding: 40px; color:#999; display:none;">Nenhum registro encontrado.</div>
+            </div>
+
+            <div id="painel-financeiro" class="panel">
+              <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Financeiro Saripan</h3>
+              <div id="financeiro-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="module-modular" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
+        <div class="form-box">
+            <h3 class="form-title">Registrar Renda Fixa (Modular)</h3>
+            
+            <div class="grid-input" style="grid-template-columns: 1fr;">
+                <div>
+                    <label>Mês de Referência:</label>
+                    <input type="month" id="mesModular" style="margin-bottom: 15px; padding: 12px;">
+                </div>
+            </div>
+            
+            <div class="grid-input">
+                <div>
+                    <label>Adiantamento (R$):</label>
+                    <input type="number" id="valorAdiantamento" placeholder="0.00">
+                </div>
+                <div>
+                    <label>Salário Líquido (R$):</label>
+                    <input type="number" id="valorSalario" placeholder="0.00">
+                </div>
+            </div>
+
+            <div class="grid-input" style="margin-top: 10px; border-top: 1px dashed #bbdefb; padding-top: 15px;">
+                <div>
+                    <label>Nome do Extra (Opcional):</label>
+                    <input type="text" id="nomeOutras" placeholder="Ex: PLR, Prêmio, Férias">
+                </div>
+                <div>
+                    <label>Valor do Extra (R$):</label>
+                    <input type="number" id="valorOutras" placeholder="0.00" style="border: 1px solid #1565c0; background: #fff;">
+                </div>
+            </div>
+
+            <button class="btn-action btn-green" id="btn-salvar-modular" onclick="adicionarRegistroModular()">💾 Salvar Mês</button>
+        </div>
+
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Modular</h3>
+        <div id="lista-modular-container"></div>
+    </div>
+
+    <div id="module-geral" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
+        
+        <!-- NOVO CAMPO: RENDA EXTRA -->
+        <div class="form-box" style="border-color: #ffe0b2; background-color: #fff8e1;">
+            <h3 class="form-title" style="color: #f57c00; border-bottom-color: #ffe0b2;">Registrar Renda Extra</h3>
+            
+            <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
+                <div>
+                    <label>Data:</label>
+                    <input type="date" id="dataExtra" style="margin-bottom: 10px; border: 1px solid #ffcc80;">
+                </div>
+                <div>
+                    <label>Valor Total (R$):</label>
+                    <input type="number" id="valorExtra" placeholder="0.00" style="border: 1px solid #ffcc80;">
+                </div>
+            </div>
+            
+            <div class="grid-input" style="grid-template-columns: 1fr;">
+                <div>
+                    <label>Identificação / Descrição:</label>
+                    <input type="text" id="descExtra" placeholder="Ex: Freelance, Venda avulsa, Serviço extra..." style="border: 1px solid #ffcc80;">
+                </div>
+            </div>
+
+            <button class="btn-action" style="background-color: #f57c00;" id="btn-salvar-extra" onclick="adicionarRegistroExtra()">➕ Adicionar Renda Extra</button>
+        </div>
+
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Entradas Extras</h3>
+        <div id="lista-extra-container" style="margin-bottom: 30px;"></div>
+
+        <!-- DASHBOARD ORIGINAL -->
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Visão Consolidada Mensal</h3>
+        <div id="dashboard-geral-content"></div>
+
+    </div>
+
+  </div>
+
+  <!-- CONTAINER OCULTO PARA GERAR A IMAGEM EXATA DA TABELA SARIPAN -->
+  <div id="print-container" style="position: absolute; top: -9999px; left: -9999px;">
+      <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
+          <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório</h1>
+          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
+              <div>Prestador: João Batista Rosa</div>
+              <div id="print-ref">Referência: --</div>
+          </div>
+          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 30px;">
+              <div style="font-weight: bold;">Resumo do Período:</div>
+              <div id="print-resumo"></div>
+              <div style="font-weight: bold; margin-top: 15px; font-size: 20px;" id="print-total-diarias">Total: -- diárias a receber</div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+              <thead>
+                  <tr style="background-color: #00AEEF; color: #000;">
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Data</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Dia</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Tipo</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Detalhes</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left; font-weight: bold;">Valor</th>
+                  </tr>
+              </thead>
+              <tbody id="print-tbody">
+                  <!-- Linhas preenchidas pelo JS -->
+              </tbody>
+              <tfoot>
+                  <tr>
+                      <td colspan="4" style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 18px; border: none;">Valor Total:</td>
+                      <td style="padding: 15px 12px; font-weight: bold; font-size: 18px; border: none; text-align: left;" id="print-valor-total">R$ 0.00</td>
+                  </tr>
+              </tfoot>
+          </table>
+      </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>
