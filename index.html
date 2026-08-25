@@ -11,11 +11,12 @@
 
   <link rel="stylesheet" href="style.css">
 
+  <!-- ESTILOS EXCLUSIVOS DO NOVO HUB (Efeito Vidro) -->
   <style>
-    #tela-hub {
+#tela-hub {
         background-image: url('JBFINANCELOGO.png');
-        background-color: #0a192f;
-        background-size: contain;
+        background-color: #0a192f; /* Cor de fundo de segurança para o telemóvel */
+        background-size: contain;  /* Mostra a imagem inteira sem dar zoom gigante */
         background-repeat: no-repeat;
         background-position: center;
         position: relative;
@@ -88,9 +89,10 @@
         transform: translateY(0);
     }
 
-    .btn-sari-glass { background: rgba(43, 153, 76, 0.75); } 
-    .btn-mod-glass { background: rgba(43, 108, 176, 0.75); } 
-    .btn-geral-glass { background: rgba(237, 137, 54, 0.85); border-color: rgba(255, 255, 255, 0.5); } 
+    /* As cores dos botões */
+    .btn-sari-glass { background: rgba(43, 153, 76, 0.75); } /* Verde Esmeralda (Opção 3) */
+    .btn-mod-glass { background: rgba(43, 108, 176, 0.75); } /* Azul Modular */
+    .btn-geral-glass { background: rgba(237, 137, 54, 0.85); border-color: rgba(255, 255, 255, 0.5); } /* Laranja JB */
     
     .btn-sair-glass {
         margin-top: 30px;
@@ -103,13 +105,14 @@
     }
     
     .btn-sair-glass:hover {
-        background: rgba(220, 53, 69, 0.5);
+        background: rgba(220, 53, 69, 0.5); /* Vermelho sutil ao passar o rato */
         border-color: rgba(220, 53, 69, 0.8);
         color: white;
     }
 
     .btn-icone { font-size: 22px; }
   </style>
+
 </head>
 <body>
 
@@ -124,7 +127,7 @@
     <button class="btn-action btn-green" onclick="fazerLogin()" style="max-width: 300px;">Entrar</button>
   </div>
 
-  <!-- TELA HUB -->
+  <!-- TELA HUB (MENU PRINCIPAL GLASSMORPHISM) -->
   <div id="tela-hub" class="hidden">
       <div class="hub-overlay"></div>
       
@@ -149,7 +152,7 @@
       </div>
   </div>
 
-  <!-- APP CONTAINER -->
+  <!-- CONTAINER DE MÓDULOS -->
   <div id="app" class="container hidden">
     
     <div class="app-header">
@@ -158,7 +161,9 @@
         <button id="btn-privacidade" class="btn-nav-top" onclick="togglePrivacidade()"></button>
     </div>
 
-    <!-- MÓDULO: SARIPAN -->
+    <!-- ============================================ -->
+    <!-- MÓDULO: SARIPAN                              -->
+    <!-- ============================================ -->
     <div id="module-saripan" class="master-module active">
         <div class="fixed-area">
             <div class="tabs-container">
@@ -172,56 +177,29 @@
             <div id="painel-registrar" class="panel active">
               <div class="form-box">
                 <h3 class="form-title">Novo Apontamento</h3>
-                
                 <label>Data do Serviço:</label>
                 <input type="date" id="dataServico" style="margin-bottom: 15px; padding: 15px; font-size: 16px;">
-                
                 <div class="grid-input">
                   <div>
                     <label>Tipo:</label>
-                    <select id="tipoCarga">
-                        <option value="1">Normal</option>
-                        <option value="2">Dupla</option>
-                    </select>
+                    <select id="tipoCarga"><option value="1">Normal</option><option value="2">Dupla</option></select>
                   </div>
                   <div>
                     <label>Detalhes:</label>
-                    <select id="tipoDia">
-                        <option value="1">Dia Útil</option>
-                        <option value="2">Domingo</option>
-                        <option value="3">Feriado</option>
-                    </select>
+                    <select id="tipoDia"><option value="1">Dia Útil</option><option value="2">Domingo</option><option value="3">Feriado</option></select>
                   </div>
                 </div>
-                
                 <div class="grid-input">
-                  <div>
-                    <label>Valor Base (R$):</label>
-                    <input type="number" id="valorBase" value="130.00">
-                  </div>
-                  <div>
-                    <label>Previsão:</label>
-                    <input type="text" id="previewValor" class="esconder-valor" readonly style="background: #eee; font-weight: bold; color: #2e7d32;">
-                  </div>
+                  <div><label>Valor Base (R$):</label><input type="number" id="valorBase" value="130.00"></div>
+                  <div><label>Previsão:</label><input type="text" id="previewValor" class="esconder-valor" readonly style="background: #eee; font-weight: bold; color: #2e7d32;"></div>
                 </div>
-                
                 <button class="btn-action btn-green" id="btn-salvar-registro" onclick="adicionarRegistro()">✅ Confirmar Apontamento</button>
               </div>
 
               <div id="rodape-dinamico" style="margin-top: 25px; padding: 0 10px;">
                 <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000; font-size: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    <thead>
-                        <tr style="background-color: #5b9bd5; color: white;">
-                            <th style="border: 1px solid #000; padding: 12px; font-weight: bold;">QTD de diárias</th>
-                            <th style="border: 1px solid #000; padding: 12px; font-weight: bold;">Total (R$)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td id="rodape-qtd" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #333;">0</td>
-                            <td id="rodape-total" class="esconder-valor" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #2e7d32;">R$ 0,00</td>
-                        </tr>
-                    </tbody>
+                    <thead><tr style="background-color: #5b9bd5; color: white;"><th style="border: 1px solid #000; padding: 12px; font-weight: bold;">QTD de diárias</th><th style="border: 1px solid #000; padding: 12px; font-weight: bold;">Total (R$)</th></tr></thead>
+                    <tbody><tr><td id="rodape-qtd" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #333;">0</td><td id="rodape-total" class="esconder-valor" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #2e7d32;">R$ 0,00</td></tr></tbody>
                 </table>
                 <div id="rodape-ref" style="text-align: center; font-size: 13px; color: #666; margin-top: 8px; font-weight: bold;">Selecione uma data para ver o resumo.</div>
               </div>
@@ -240,9 +218,12 @@
         </div>
     </div>
 
-    <!-- MÓDULO: MODULAR -->
+    <!-- ============================================ -->
+    <!-- MÓDULO: MODULAR                              -->
+    <!-- ============================================ -->
     <div id="module-modular" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         
+        <!-- Configuração de Salário Base -->
         <div class="form-box" style="margin-bottom: 15px; border-color: #90caf9; background: #e3f2fd; padding: 15px;">
             <h4 style="color: #0d47a1; margin-bottom: 10px; font-size: 14px;">⚙️ Salário Base Contratual</h4>
             <div style="display: flex; gap: 10px; align-items: flex-end;">
@@ -252,69 +233,10 @@
                 </div>
                 <button class="btn-action" style="background: #1565c0; width: auto; padding: 10px 20px; font-size: 13px;" onclick="salvarSalarioBase()">Salvar</button>
             </div>
-            <p style="font-size: 11px; color: #555; margin-top: 8px;">O Adiantamento (40%) será gerado <b>automaticamente todo dia 15</b>.</p>
+            <p style="font-size: 11px; color: #555; margin-top: 8px;">O Adiantamento (40%) será gerado <b>automaticamente todo dia 15</b> com base neste valor.</p>
         </div>
 
-        <!-- CALCULADORA DE FOLHA DIRETA (VISÍVEL) -->
-        <div class="form-box" style="margin-bottom: 20px; border-color: #1565c0; background: #f0f7ff;">
-            <h3 class="form-title" style="color: #1565c0; border-bottom-color: #bbdefb; display: flex; align-items: center; gap: 8px;">
-                🧮 Calculadora de Folha Modular
-            </h3>
-            
-            <div class="grid-input" style="grid-template-columns: 1fr 1fr; margin-bottom:10px;">
-                <div>
-                    <label>Dias Trabalhados:</label>
-                    <input type="number" id="calc-dias" value="30">
-                </div>
-                <div>
-                    <label>Faltas (dias):</label>
-                    <input type="number" id="calc-faltas" placeholder="0">
-                </div>
-            </div>
-            
-            <div class="grid-input" style="grid-template-columns: 1fr 1fr; margin-bottom:10px;">
-                <div>
-                    <label>Hora Extra 50% (h):</label>
-                    <input type="number" id="calc-he50" placeholder="0">
-                </div>
-                <div>
-                    <label>Hora Extra 100% (h):</label>
-                    <input type="number" id="calc-he100" placeholder="0">
-                </div>
-            </div>
-            
-            <div class="grid-input" style="grid-template-columns: 1fr 1fr; margin-bottom:10px;">
-                <div>
-                    <label>Adic. Noturno (h):</label>
-                    <input type="number" id="calc-noturno" placeholder="0">
-                </div>
-                <div>
-                    <label>Dependentes:</label>
-                    <input type="number" id="calc-dependentes" placeholder="0">
-                </div>
-            </div>
-
-            <div class="grid-input" style="grid-template-columns: 1fr 1fr; margin-bottom:15px;">
-                <div>
-                    <label>Sindicato:</label>
-                    <select id="calc-sindicato" style="padding: 10px; width: 100%; border-radius: 4px; border: 1px solid #ccc;">
-                        <option value="nao">Não</option>
-                        <option value="sim">Sim</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Descontar VT:</label>
-                    <select id="calc-vt" style="padding: 10px; width: 100%; border-radius: 4px; border: 1px solid #ccc;">
-                        <option value="sim">Sim (6%)</option>
-                        <option value="nao">Não</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button class="btn-action" style="background:#1565c0; font-size: 14px;" onclick="calcularEInjetarModular()">⚙️ Calcular e Preencher Fechamento</button>
-        </div>
-
-        <!-- Fechamento Mensal -->
+        <!-- Fechamento do Mês -->
         <div class="form-box">
             <h3 class="form-title">Fechamento Mensal (Modular)</h3>
             
@@ -345,6 +267,7 @@
 
             <div style="background: #e8f5e9; border: 1px dashed #a5d6a7; padding: 10px; margin-top: 15px; border-radius: 6px; text-align: center;">
                 <div style="font-size: 12px; color: #2e7d32; font-weight: bold; margin-bottom: 5px;">Benefícios Fixos: + R$ 1.225,00</div>
+                <div style="font-size: 11px; color: #1b5e20;">VA: 600,00 | Mobilidade: 500,00 | Ajuda: 125,00</div>
             </div>
 
             <button class="btn-action btn-green" style="margin-top: 15px;" onclick="salvarMesModular()">💾 Salvar Fechamento Real</button>
@@ -354,23 +277,18 @@
         <div id="lista-modular-container"></div>
     </div>
 
-    <!-- MÓDULO: VISÃO GERAL E EXTRAS -->
+    <!-- ============================================ -->
+    <!-- MÓDULO: VISÃO GERAL E EXTRAS                 -->
+    <!-- ============================================ -->
     <div id="module-geral" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         
         <div class="form-box" style="border-color: #ffe0b2; background-color: #fff8e1;">
             <h3 class="form-title" style="color: #f57c00; border-bottom-color: #ffe0b2;">Registrar Renda Extra (Bicos)</h3>
             
             <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
-                <div>
-                    <label>Data:</label>
-                    <input type="date" id="dataExtra" style="border: 1px solid #ffcc80;">
-                </div>
-                <div>
-                    <label>Valor (R$):</label>
-                    <input type="number" id="valorExtra" placeholder="0.00" style="border: 1px solid #ffcc80;">
-                </div>
+                <div><label>Data:</label><input type="date" id="dataExtra" style="border: 1px solid #ffcc80;"></div>
+                <div><label>Valor (R$):</label><input type="number" id="valorExtra" placeholder="0.00" style="border: 1px solid #ffcc80;"></div>
             </div>
-            
             <div style="margin-top: 10px;">
                 <label>Descrição:</label>
                 <input type="text" id="descExtra" placeholder="Ex: Freelance, Venda avulsa..." style="border: 1px solid #ffcc80; width: 100%;">
@@ -386,9 +304,9 @@
         <div id="dashboard-geral-content"></div>
     </div>
 
-  </div>
+  </div> <!-- FIM DO APP -->
 
-  <!-- CONTAINER PRINT -->
+  <!-- CONTAINER PRINT (Invisível) -->
   <div id="print-container" style="position: absolute; top: -9999px; left: -9999px;">
       <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
           <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório</h1>
@@ -422,8 +340,10 @@
       </div>
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <script type="module" src="app.js"></script>
 
 </body>
