@@ -223,14 +223,8 @@ window.renderizarHistoricoModular = () => {
         const adiantamento = parseFloat(r.adiantamento) || 0;
         const salario = parseFloat(r.salario) || 0;
         const outras = parseFloat(r.outras) || 0;
-        
-        // Garante os 1225 retroativos para meses antigos
         const beneficios = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225;
-        
-        // O total antigo era só o remunerativo
         const tr = parseFloat(r.totalRemunerativo) || parseFloat(r.total) || (adiantamento + salario + outras);
-        
-        // Força a soma dos benefícios no total geral antigo
         const tg = parseFloat(r.totalGeral) || (tr + beneficios);
 
         tableHtml += `
@@ -250,7 +244,7 @@ window.renderizarHistoricoModular = () => {
 };
 
 // ==========================================
-// 3. VISÃO GERAL (DASHBOARD)
+// 3. VISÃO GERAL (DASHBOARD E TABELA MÊS A MÊS)
 // ==========================================
 window.renderizarDashboardGeral = () => {
     const container = document.getElementById('dashboard-geral-content');
@@ -270,10 +264,7 @@ window.renderizarDashboardGeral = () => {
     
     window.registrosModular.forEach(r => { 
         const k = initData(r.ano, r.mes); 
-        // O Remunerativo herda o total antigo
         const rem = parseFloat(r.totalRemunerativo) || parseFloat(r.total) || 0;
-        
-        // Injeta os R$ 1.225 no gráfico para meses anteriores
         const ben = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225;
         
         dadosGerais[k].modularRem += rem; 
@@ -292,21 +283,39 @@ window.renderizarDashboardGeral = () => {
         let totalAcumuladoAno = 0; 
         const labels = [], dataSari = [], dataModRem = [], dataBen = [], dataExtra = [];
         
+        let htmlTabelaCorpo = '';
+
         mesesDoAno.forEach(m => {
             labels.push(MESES[m.mes].substring(0,3)); 
             dataSari.push(m.saripan); 
             dataModRem.push(m.modularRem); 
             dataBen.push(m.modularBen);
             dataExtra.push(m.extra);
-            totalAcumuladoAno += (m.saripan + m.modularRem + m.modularBen + m.extra);
+            
+            const totalMes = m.saripan + m.modularRem + m.modularBen + m.extra;
+            totalAcumuladoAno += totalMes;
+
+            // Monta as linhas da tabela analítica mês a mês
+            htmlTabelaCorpo += `
+                <tr>
+                    <td style="padding: 8px; font-weight: bold; color: #455a64; text-align: left;">${MESES[m.mes]}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.modularRem.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.modularBen.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.saripan.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.extra.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right; background: #e8f5e9; font-weight: bold; color: #1b5e20;">R$ ${totalMes.toFixed(2)}</td>
+                </tr>
+            `;
         });
         
         const media = mesesDoAno.length > 0 ? (totalAcumuladoAno / mesesDoAno.length) : 0;
-        htmlFinal += `<div style="margin-bottom: 30px;">
+        
+        htmlFinal += `<div style="margin-bottom: 35px;">
             <h4 style="color: #f57c00; border-bottom: 2px solid #ffe0b2; padding-bottom: 5px;">ANÁLISE FINANCEIRA ${ano}</h4>
+            
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <div class="year-summary" style="flex: 1; padding: 10px; border-color: #ffcc80;">
-                    <h4>PODER DE COMPRA REAL</h4>
+                    <h4>RENDIMENTO TOTAL</h4>
                     <div class="year-total-value esconder-valor" style="font-size: 15px; margin-top: 10px; color: #e65100;">${totalAcumuladoAno.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div>
                 </div>
                 <div class="year-summary" style="flex: 1; padding: 10px; background: #e3f2fd; border-color: #90caf9;">
@@ -314,10 +323,31 @@ window.renderizarDashboardGeral = () => {
                     <div class="year-total-value esconder-valor" style="font-size: 15px; color: #0d47a1; margin-top: 10px;">${media.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div>
                 </div>
             </div>
-            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+
+            <!-- Gráfico Consolidado -->
+            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
                 <div style="position: relative; height: 250px; width: 100%;">
                     <canvas id="grafico-geral-${ano}" class="esconder-valor"></canvas>
                 </div>
+            </div>
+
+            <!-- Tabela Analítica Mês a Mês Restaurada -->
+            <div style="overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #cfd8dc;">
+                <table style="width: 100%; min-width: 550px; font-size: 11px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #e3f2fd; border-bottom: 2px solid #90caf9; text-align: right;">
+                            <th style="padding: 10px 8px; text-align: left;">Mês</th>
+                            <th style="padding: 10px 8px;">Mod. Rem.</th>
+                            <th style="padding: 10px 8px;">Benefícios</th>
+                            <th style="padding: 10px 8px;">Saripan</th>
+                            <th style="padding: 10px 8px;">Extras</th>
+                            <th style="padding: 10px 8px; background: #c8e6c9; color: #1b5e20;">Total do Mês</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${htmlTabelaCorpo}
+                    </tbody>
+                </table>
             </div>
         </div>`;
 
