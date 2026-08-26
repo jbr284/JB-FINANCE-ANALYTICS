@@ -8,162 +8,58 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
   <meta name="theme-color" content="#002f6c">
-
   <link rel="stylesheet" href="style.css">
 
-  <!-- ESTILOS EXCLUSIVOS DO NOVO HUB (Efeito Vidro) -->
   <style>
-#tela-hub {
-        background-image: url('JBFINANCELOGO.png');
-        background-color: #0a192f; /* Cor de fundo de segurança para o telemóvel */
-        background-size: contain;  /* Mostra a imagem inteira sem dar zoom gigante */
-        background-repeat: no-repeat;
-        background-position: center;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        width: 100vw;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .hub-overlay {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(10, 25, 47, 0.7);
-        z-index: 1;
-    }
-    
-    .hub-content {
-        position: relative;
-        z-index: 2;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-        max-width: 400px;
-        padding: 20px;
-    }
-    
-    .hub-title {
-        color: white;
-        font-size: 32px;
-        margin-bottom: 50px;
-        text-shadow: 0 4px 10px rgba(0,0,0,0.8);
-        font-weight: 900;
-        letter-spacing: 1.5px;
-        text-align: center;
-    }
-    
-    .btn-vidro {
-        width: 100%;
-        padding: 20px;
-        margin-bottom: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border-radius: 16px;
-        font-size: 16px;
-        font-weight: 800;
-        color: white;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-    }
-
-    .btn-vidro:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-    }
-    
-    .btn-vidro:active {
-        transform: translateY(0);
-    }
-
-    /* As cores dos botões */
-    .btn-sari-glass { background: rgba(43, 153, 76, 0.75); } /* Verde Esmeralda (Opção 3) */
-    .btn-mod-glass { background: rgba(43, 108, 176, 0.75); } /* Azul Modular */
-    .btn-geral-glass { background: rgba(237, 137, 54, 0.85); border-color: rgba(255, 255, 255, 0.5); } /* Laranja JB */
-    
-    .btn-sair-glass {
-        margin-top: 30px;
-        padding: 15px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #ddd;
-        font-size: 13px;
-        border-radius: 10px;
-    }
-    
-    .btn-sair-glass:hover {
-        background: rgba(220, 53, 69, 0.5); /* Vermelho sutil ao passar o rato */
-        border-color: rgba(220, 53, 69, 0.8);
-        color: white;
-    }
-
+    #tela-hub { background-image: url('JBFINANCELOGO.png'); background-color: #0a192f; background-size: contain; background-repeat: no-repeat; background-position: center; position: relative; display: flex; align-items: center; justify-content: center; min-height: 100vh; width: 100vw; padding: 0; margin: 0; }
+    .hub-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 25, 47, 0.7); z-index: 1; }
+    .hub-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 400px; padding: 20px; }
+    .hub-title { color: white; font-size: 32px; margin-bottom: 50px; text-shadow: 0 4px 10px rgba(0,0,0,0.8); font-weight: 900; letter-spacing: 1.5px; text-align: center; }
+    .btn-vidro { width: 100%; padding: 20px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 16px; font-size: 16px; font-weight: 800; color: white; cursor: pointer; transition: all 0.3s ease; letter-spacing: 0.5px; text-transform: uppercase; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .btn-vidro:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.8); }
+    .btn-sari-glass { background: rgba(43, 153, 76, 0.75); } 
+    .btn-mod-glass { background: rgba(43, 108, 176, 0.75); } 
+    .btn-geral-glass { background: rgba(237, 137, 54, 0.85); border-color: rgba(255, 255, 255, 0.5); } 
+    .btn-sair-glass { margin-top: 30px; padding: 15px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #ddd; font-size: 13px; border-radius: 10px; }
+    .btn-sair-glass:hover { background: rgba(220, 53, 69, 0.5); border-color: rgba(220, 53, 69, 0.8); color: white; }
     .btn-icone { font-size: 22px; }
   </style>
-
 </head>
 <body>
 
   <div id="toast">✅ Operação realizada com sucesso!</div>
 
-  <!-- TELA DE LOGIN -->
+  <!-- TELA LOGIN -->
   <div id="tela-login" class="container-center hidden">
     <h1 style="color:#002f6c; font-size: 35px; margin-bottom: 5px; text-align: center;">JB Finance Analytics</h1>
     <p style="color:#666; margin-bottom: 30px;">Acesso restrito - ERP</p>
-    <input type="email" id="emailLogin" class="input-login" placeholder="E-mail" autocomplete="username" style="max-width: 300px;">
-    <input type="password" id="senhaLogin" class="input-login" placeholder="Senha" autocomplete="current-password" style="max-width: 300px;">
+    <input type="email" id="emailLogin" class="input-login" placeholder="E-mail" style="max-width: 300px;">
+    <input type="password" id="senhaLogin" class="input-login" placeholder="Senha" style="max-width: 300px;">
     <button class="btn-action btn-green" onclick="fazerLogin()" style="max-width: 300px;">Entrar</button>
   </div>
 
-  <!-- TELA HUB (MENU PRINCIPAL GLASSMORPHISM) -->
+  <!-- TELA HUB -->
   <div id="tela-hub" class="hidden">
       <div class="hub-overlay"></div>
-      
       <div class="hub-content">
           <div class="hub-title">JB Finance Analytics</div>
-          
-          <button class="btn-vidro btn-sari-glass" onclick="abrirModulo('saripan')">
-              <span class="btn-icone">🏢</span> Módulo SARIPAN
-          </button>
-          
-          <button class="btn-vidro btn-mod-glass" onclick="abrirModulo('modular')">
-              <span class="btn-icone">🏭</span> Módulo MODULAR
-          </button>
-          
-          <button class="btn-vidro btn-geral-glass" onclick="abrirModulo('geral')">
-              <span class="btn-icone">📊</span> VISÃO GERAL
-          </button>
-
-          <button class="btn-vidro btn-sair-glass" onclick="sairApp()">
-              Sair da Conta
-          </button>
+          <button class="btn-vidro btn-sari-glass" onclick="abrirModulo('saripan')"><span class="btn-icone">🏢</span> Módulo SARIPAN</button>
+          <button class="btn-vidro btn-mod-glass" onclick="abrirModulo('modular')"><span class="btn-icone">🏭</span> Módulo MODULAR</button>
+          <button class="btn-vidro btn-geral-glass" onclick="abrirModulo('geral')"><span class="btn-icone">📊</span> VISÃO GERAL</button>
+          <button class="btn-vidro btn-sair-glass" onclick="sairApp()">Sair da Conta</button>
       </div>
   </div>
 
-  <!-- CONTAINER DE MÓDULOS -->
+  <!-- APP PRINCIPAL -->
   <div id="app" class="container hidden">
     
     <div class="app-header">
         <button class="btn-nav-top" onclick="voltarAoHub()">⬅ Voltar</button>
-        <div id="app-title" class="app-title">JB Finance Analytics</div>
+        <div id="app-title" class="app-title">JB Finance Analytics V4.0</div>
         <button id="btn-privacidade" class="btn-nav-top" onclick="togglePrivacidade()"></button>
     </div>
 
-    <!-- ============================================ -->
-    <!-- MÓDULO: SARIPAN                              -->
-    <!-- ============================================ -->
+    <!-- MÓDULO: SARIPAN -->
     <div id="module-saripan" class="master-module active">
         <div class="fixed-area">
             <div class="tabs-container">
@@ -172,139 +68,97 @@
               <button id="btn-tab-financeiro" class="tab-btn" onclick="mudarAba('financeiro')">💰 Financeiro</button>
             </div>
         </div>
-
+        
         <div class="scroll-content">
             <div id="painel-registrar" class="panel active">
               <div class="form-box">
                 <h3 class="form-title">Novo Apontamento</h3>
-                <label>Data do Serviço:</label>
-                <input type="date" id="dataServico" style="margin-bottom: 15px; padding: 15px; font-size: 16px;">
+                <label>Data do Serviço:</label><input type="date" id="dataServico" style="margin-bottom: 15px; padding: 15px; font-size: 16px;">
                 <div class="grid-input">
-                  <div>
-                    <label>Tipo:</label>
-                    <select id="tipoCarga"><option value="1">Normal</option><option value="2">Dupla</option></select>
-                  </div>
-                  <div>
-                    <label>Detalhes:</label>
-                    <select id="tipoDia"><option value="1">Dia Útil</option><option value="2">Domingo</option><option value="3">Feriado</option></select>
-                  </div>
+                  <div><label>Tipo:</label><select id="tipoCarga"><option value="1">Normal</option><option value="2">Dupla</option></select></div>
+                  <div><label>Detalhes:</label><select id="tipoDia"><option value="1">Dia Útil</option><option value="2">Domingo</option><option value="3">Feriado</option></select></div>
                 </div>
                 <div class="grid-input">
                   <div><label>Valor Base (R$):</label><input type="number" id="valorBase" value="130.00"></div>
                   <div><label>Previsão:</label><input type="text" id="previewValor" class="esconder-valor" readonly style="background: #eee; font-weight: bold; color: #2e7d32;"></div>
                 </div>
-                <button class="btn-action btn-green" id="btn-salvar-registro" onclick="adicionarRegistro()">✅ Confirmar Apontamento</button>
+                <button class="btn-action btn-green" onclick="adicionarRegistro()">✅ Confirmar Apontamento</button>
               </div>
-
+              
               <div id="rodape-dinamico" style="margin-top: 25px; padding: 0 10px;">
-                <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000; font-size: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    <thead><tr style="background-color: #5b9bd5; color: white;"><th style="border: 1px solid #000; padding: 12px; font-weight: bold;">QTD de diárias</th><th style="border: 1px solid #000; padding: 12px; font-weight: bold;">Total (R$)</th></tr></thead>
-                    <tbody><tr><td id="rodape-qtd" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #333;">0</td><td id="rodape-total" class="esconder-valor" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #2e7d32;">R$ 0,00</td></tr></tbody>
+                <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000;">
+                    <thead><tr style="background-color: #5b9bd5; color: white;"><th style="border: 1px solid #000; padding: 12px;">QTD de diárias</th><th style="border: 1px solid #000; padding: 12px;">Total (R$)</th></tr></thead>
+                    <tbody><tr><td id="rodape-qtd" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px;">0</td><td id="rodape-total" class="esconder-valor" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #2e7d32;">R$ 0,00</td></tr></tbody>
                 </table>
-                <div id="rodape-ref" style="text-align: center; font-size: 13px; color: #666; margin-top: 8px; font-weight: bold;">Selecione uma data para ver o resumo.</div>
               </div>
             </div>
 
-            <div id="painel-historico" class="panel">
-                <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Registros e Relatórios</h3>
-                <div id="lista-quinzenas-container"></div>
-                <div id="msg-sem-dados" style="text-align:center; padding: 40px; color:#999; display:none;">Nenhum registro encontrado.</div>
-            </div>
-
-            <div id="painel-financeiro" class="panel">
-              <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Financeiro Saripan</h3>
-              <div id="financeiro-content"></div>
-            </div>
+            <div id="painel-historico" class="panel"><h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Registros e Relatórios</h3><div id="lista-quinzenas-container"></div><div id="msg-sem-dados" style="text-align:center; padding: 40px; color:#999; display:none;">Nenhum registro encontrado.</div></div>
+            <div id="painel-financeiro" class="panel"><h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Financeiro Saripan</h3><div id="financeiro-content"></div></div>
         </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- MÓDULO: MODULAR                              -->
-    <!-- ============================================ -->
+    <!-- MÓDULO: MODULAR -->
     <div id="module-modular" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
         
-        <!-- Configuração de Salário Base -->
         <div class="form-box" style="margin-bottom: 15px; border-color: #90caf9; background: #e3f2fd; padding: 15px;">
             <h4 style="color: #0d47a1; margin-bottom: 10px; font-size: 14px;">⚙️ Salário Base Contratual</h4>
             <div style="display: flex; gap: 10px; align-items: flex-end;">
-                <div style="flex: 1;">
-                    <label style="font-size: 11px; color: #1565c0; font-weight: bold;">Valor Vigente (R$):</label>
-                    <input type="number" id="configSalarioBase" placeholder="Ex: 2500.00" style="padding: 10px; border: 1px solid #64b5f6; border-radius: 4px; width: 100%;">
-                </div>
+                <div style="flex: 1;"><label style="font-size: 11px; color: #1565c0; font-weight: bold;">Valor Vigente (R$):</label><input type="number" id="configSalarioBase" placeholder="0.00" style="padding: 10px; border: 1px solid #64b5f6; border-radius: 4px; width: 100%;"></div>
                 <button class="btn-action" style="background: #1565c0; width: auto; padding: 10px 20px; font-size: 13px;" onclick="salvarSalarioBase()">Salvar</button>
             </div>
-            <p style="font-size: 11px; color: #555; margin-top: 8px;">O Adiantamento (40%) será gerado <b>automaticamente todo dia 15</b> com base neste valor.</p>
         </div>
 
-        <!-- Fechamento do Mês -->
+        <!-- ================= JANELA BLINDADA (IFRAME) ================= -->
+        <div style="margin-bottom: 20px; background-color: #ffffff; border: 1px solid #1565c0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+            
+            <div onclick="const frame = document.getElementById('iframe-calculadora'); frame.style.display = (frame.style.display === 'none' ? 'block' : 'none');" 
+                 style="background-color: #e3f2fd; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="margin:0; color:#1565c0; font-size: 16px;">🧮 Simulador de Folha (Cirúrgico)</h4>
+                <span style="font-size: 12px; background-color: #1565c0; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: bold;">▼ Clique para abrir</span>
+            </div>
+            
+            <div id="iframe-calculadora" style="display: none; padding: 0; border-top: 1px solid #90caf9;">
+                <iframe src="calculadora.html" style="width: 100%; height: 850px; border: none; display: block;"></iframe>
+            </div>
+            
+        </div>
+        <!-- ================= FIM DA JANELA BLINDADA ================= -->
+
+        <!-- FECHAMENTO MENSAL -->
         <div class="form-box">
             <h3 class="form-title">Fechamento Mensal (Modular)</h3>
-            
-            <label>Mês de Referência:</label>
-            <input type="month" id="mesModular" style="margin-bottom: 15px; padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 4px;" onchange="preencherFormularioModular()">
-
+            <label>Mês de Referência:</label><input type="month" id="mesModular" style="margin-bottom: 15px; padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 4px;" onchange="preencherFormularioModular()">
             <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
-                <div>
-                    <label>Adiant. (Dia 15):</label>
-                    <input type="text" id="viewAdiantamento" readonly class="esconder-valor" style="background: #f5f5f5; color: #666; font-weight: bold;">
-                </div>
-                <div>
-                    <label>Salário Líq. (Dia 30):</label>
-                    <input type="number" id="inputSalarioLiquido" placeholder="0.00">
-                </div>
+                <div><label>Adiant. (Dia 15):</label><input type="text" id="viewAdiantamento" readonly class="esconder-valor" style="background: #f5f5f5; color: #666; font-weight: bold;"></div>
+                <div><label>Salário Líq. (Dia 30):</label><input type="number" id="inputSalarioLiquido" placeholder="0.00"></div>
             </div>
-
             <div class="grid-input" style="margin-top: 10px;">
-                <div>
-                    <label>Extras (Opcional):</label>
-                    <input type="number" id="inputExtras" placeholder="0.00">
-                </div>
-                <div>
-                    <label>Desc. Extras:</label>
-                    <input type="text" id="descExtras" placeholder="Ex: Prêmio, PLR">
-                </div>
+                <div><label>Extras (Opcional):</label><input type="number" id="inputExtras" placeholder="0.00"></div>
+                <div><label>Desc. Extras:</label><input type="text" id="descExtras" placeholder="Ex: Prêmio, PLR"></div>
             </div>
-
-            <div style="background: #e8f5e9; border: 1px dashed #a5d6a7; padding: 10px; margin-top: 15px; border-radius: 6px; text-align: center;">
-                <div style="font-size: 12px; color: #2e7d32; font-weight: bold; margin-bottom: 5px;">Benefícios Fixos: + R$ 1.225,00</div>
-                <div style="font-size: 11px; color: #1b5e20;">VA: 600,00 | Mobilidade: 500,00 | Ajuda: 125,00</div>
-            </div>
-
+            <div style="background: #e8f5e9; border: 1px dashed #a5d6a7; padding: 10px; margin-top: 15px; border-radius: 6px; text-align: center;"><div style="font-size: 12px; color: #2e7d32; font-weight: bold;">Benefícios Fixos: + R$ 1.225,00</div></div>
             <button class="btn-action btn-green" style="margin-top: 15px;" onclick="salvarMesModular()">💾 Salvar Fechamento Real</button>
         </div>
 
-        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Analítico Modular</h3>
-        <div id="lista-modular-container"></div>
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Analítico Modular</h3><div id="lista-modular-container"></div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- MÓDULO: VISÃO GERAL E EXTRAS                 -->
-    <!-- ============================================ -->
+    <!-- MÓDULO: VISÃO GERAL / EXTRAS -->
     <div id="module-geral" class="master-module scroll-content" style="padding: 15px; background: #f0f2f5;">
-        
         <div class="form-box" style="border-color: #ffe0b2; background-color: #fff8e1;">
-            <h3 class="form-title" style="color: #f57c00; border-bottom-color: #ffe0b2;">Registrar Renda Extra (Bicos)</h3>
-            
+            <h3 class="form-title" style="color: #f57c00; border-bottom-color: #ffe0b2;">Registrar Renda Extra</h3>
             <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
                 <div><label>Data:</label><input type="date" id="dataExtra" style="border: 1px solid #ffcc80;"></div>
                 <div><label>Valor (R$):</label><input type="number" id="valorExtra" placeholder="0.00" style="border: 1px solid #ffcc80;"></div>
             </div>
-            <div style="margin-top: 10px;">
-                <label>Descrição:</label>
-                <input type="text" id="descExtra" placeholder="Ex: Freelance, Venda avulsa..." style="border: 1px solid #ffcc80; width: 100%;">
-            </div>
-
-            <button class="btn-action" style="background-color: #f57c00; margin-top: 15px;" onclick="adicionarRegistroExtra()">➕ Adicionar Renda Extra</button>
+            <div style="margin-top: 10px;"><label>Descrição:</label><input type="text" id="descExtra" style="border: 1px solid #ffcc80; width: 100%;"></div>
+            <button class="btn-action" style="background-color: #f57c00; margin-top: 15px;" onclick="adicionarRegistroExtra()">➕ Adicionar</button>
         </div>
-
-        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Extras</h3>
-        <div id="lista-extra-container" style="margin-bottom: 30px;"></div>
-
-        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Painel de Evolução Financeira</h3>
-        <div id="dashboard-geral-content"></div>
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Extras</h3><div id="lista-extra-container" style="margin-bottom: 30px;"></div>
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Evolução Financeira</h3><div id="dashboard-geral-content"></div>
     </div>
-
-  </div> <!-- FIM DO APP -->
+  </div>
 
   <!-- CONTAINER PRINT (Invisível) -->
   <div id="print-container" style="position: absolute; top: -9999px; left: -9999px;">
@@ -340,11 +194,8 @@
       </div>
   </div>
 
-  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
   <script type="module" src="app.js"></script>
-
 </body>
 </html>
