@@ -11,70 +11,17 @@
   <link rel="stylesheet" href="style.css">
 
   <style>
-    /* Estilos do Hub e Botões Vidro */
-    #tela-hub {
-        background-image: url('JBFINANCELOGO.png');
-        background-color: #0a192f;
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        width: 100vw;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .hub-overlay {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(10, 25, 47, 0.7); z-index: 1;
-    }
-    
-    .hub-content {
-        position: relative; z-index: 2; display: flex;
-        flex-direction: column; align-items: center;
-        width: 100%; max-width: 400px; padding: 20px;
-    }
-    
-    .hub-title {
-        color: white; font-size: 32px; margin-bottom: 50px;
-        text-shadow: 0 4px 10px rgba(0,0,0,0.8);
-        font-weight: 900; letter-spacing: 1.5px; text-align: center;
-    }
-    
-    .btn-vidro {
-        width: 100%; padding: 20px; margin-bottom: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        border-radius: 16px; font-size: 16px; font-weight: 800;
-        color: white; cursor: pointer; transition: all 0.3s ease;
-        letter-spacing: 0.5px; text-transform: uppercase;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        display: flex; align-items: center; justify-content: center; gap: 12px;
-    }
-    
-    .btn-vidro:hover {
-        transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-    }
-    
+    #tela-hub { background-image: url('JBFINANCELOGO.png'); background-color: #0a192f; background-size: contain; background-repeat: no-repeat; background-position: center; position: relative; display: flex; align-items: center; justify-content: center; min-height: 100vh; width: 100vw; padding: 0; margin: 0; }
+    .hub-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 25, 47, 0.7); z-index: 1; }
+    .hub-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 400px; padding: 20px; }
+    .hub-title { color: white; font-size: 32px; margin-bottom: 50px; text-shadow: 0 4px 10px rgba(0,0,0,0.8); font-weight: 900; letter-spacing: 1.5px; text-align: center; }
+    .btn-vidro { width: 100%; padding: 20px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 16px; font-size: 16px; font-weight: 800; color: white; cursor: pointer; transition: all 0.3s ease; letter-spacing: 0.5px; text-transform: uppercase; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .btn-vidro:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.8); }
     .btn-sari-glass { background: rgba(43, 153, 76, 0.75); } 
     .btn-mod-glass { background: rgba(43, 108, 176, 0.75); } 
     .btn-geral-glass { background: rgba(237, 137, 54, 0.85); border-color: rgba(255, 255, 255, 0.5); } 
-    
-    .btn-sair-glass {
-        margin-top: 30px; padding: 15px; background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2); color: #ddd;
-        font-size: 13px; border-radius: 10px;
-    }
-    
-    .btn-sair-glass:hover {
-        background: rgba(220, 53, 69, 0.5); border-color: rgba(220, 53, 69, 0.8); color: white;
-    }
-    
+    .btn-sair-glass { margin-top: 30px; padding: 15px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #ddd; font-size: 13px; border-radius: 10px; }
+    .btn-sair-glass:hover { background: rgba(220, 53, 69, 0.5); border-color: rgba(220, 53, 69, 0.8); color: white; }
     .btn-icone { font-size: 22px; }
   </style>
 </head>
@@ -82,7 +29,7 @@
 
   <div id="toast">✅ Operação realizada com sucesso!</div>
 
-  <!-- ================= TELA LOGIN ================= -->
+  <!-- TELA LOGIN -->
   <div id="tela-login" class="container-center hidden">
     <h1 style="color:#002f6c; font-size: 35px; margin-bottom: 5px; text-align: center;">JB Finance Analytics</h1>
     <p style="color:#666; margin-bottom: 30px;">Acesso restrito - ERP</p>
@@ -91,25 +38,19 @@
     <button class="btn-action btn-green" onclick="fazerLogin()" style="max-width: 300px;">Entrar</button>
   </div>
 
-  <!-- ================= TELA HUB ================= -->
+  <!-- TELA HUB -->
   <div id="tela-hub" class="hidden">
       <div class="hub-overlay"></div>
       <div class="hub-content">
           <div class="hub-title">JB Finance Analytics</div>
-          <button class="btn-vidro btn-sari-glass" onclick="abrirModulo('saripan')">
-              <span class="btn-icone">🏢</span> Módulo SARIPAN
-          </button>
-          <button class="btn-vidro btn-mod-glass" onclick="abrirModulo('modular')">
-              <span class="btn-icone">🏭</span> Módulo MODULAR
-          </button>
-          <button class="btn-vidro btn-geral-glass" onclick="abrirModulo('geral')">
-              <span class="btn-icone">📊</span> VISÃO GERAL
-          </button>
+          <button class="btn-vidro btn-sari-glass" onclick="abrirModulo('saripan')"><span class="btn-icone">🏢</span> Módulo SARIPAN</button>
+          <button class="btn-vidro btn-mod-glass" onclick="abrirModulo('modular')"><span class="btn-icone">🏭</span> Módulo MODULAR</button>
+          <button class="btn-vidro btn-geral-glass" onclick="abrirModulo('geral')"><span class="btn-icone">📊</span> VISÃO GERAL</button>
           <button class="btn-vidro btn-sair-glass" onclick="sairApp()">Sair da Conta</button>
       </div>
   </div>
 
-  <!-- ================= APP PRINCIPAL ================= -->
+  <!-- APP PRINCIPAL -->
   <div id="app" class="container hidden">
     
     <div class="app-header">
@@ -129,7 +70,6 @@
         </div>
         
         <div class="scroll-content">
-            <!-- SARIPAN: Registrar -->
             <div id="painel-registrar" class="panel active">
               <div class="form-box">
                 <h3 class="form-title">Novo Apontamento</h3>
@@ -137,59 +77,27 @@
                 <input type="date" id="dataServico" style="margin-bottom: 15px; padding: 15px; font-size: 16px;">
                 
                 <div class="grid-input">
-                  <div>
-                      <label>Tipo:</label>
-                      <select id="tipoCarga"><option value="1">Normal</option><option value="2">Dupla</option></select>
-                  </div>
-                  <div>
-                      <label>Detalhes:</label>
-                      <select id="tipoDia"><option value="1">Dia Útil</option><option value="2">Domingo</option><option value="3">Feriado</option></select>
-                  </div>
+                  <div><label>Tipo:</label><select id="tipoCarga"><option value="1">Normal</option><option value="2">Dupla</option></select></div>
+                  <div><label>Detalhes:</label><select id="tipoDia"><option value="1">Dia Útil</option><option value="2">Domingo</option><option value="3">Feriado</option></select></div>
                 </div>
                 
                 <div class="grid-input">
-                  <div>
-                      <label>Valor Base (R$):</label>
-                      <input type="number" id="valorBase" value="130.00">
-                  </div>
-                  <div>
-                      <label>Previsão:</label>
-                      <input type="text" id="previewValor" class="esconder-valor" readonly style="background: #eee; font-weight: bold; color: #2e7d32;">
-                  </div>
+                  <div><label>Valor Base (R$):</label><input type="number" id="valorBase" value="130.00"></div>
+                  <div><label>Previsão:</label><input type="text" id="previewValor" class="esconder-valor" readonly style="background: #eee; font-weight: bold; color: #2e7d32;"></div>
                 </div>
                 <button class="btn-action btn-green" onclick="adicionarRegistro()">✅ Confirmar Apontamento</button>
               </div>
               
               <div id="rodape-dinamico" style="margin-top: 25px; padding: 0 10px;">
                 <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000;">
-                    <thead>
-                        <tr style="background-color: #5b9bd5; color: white;">
-                            <th style="border: 1px solid #000; padding: 12px;">QTD de diárias</th>
-                            <th style="border: 1px solid #000; padding: 12px;">Total (R$)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td id="rodape-qtd" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px;">0</td>
-                            <td id="rodape-total" class="esconder-valor" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #2e7d32;">R$ 0,00</td>
-                        </tr>
-                    </tbody>
+                    <thead><tr style="background-color: #5b9bd5; color: white;"><th style="border: 1px solid #000; padding: 12px;">QTD de diárias</th><th style="border: 1px solid #000; padding: 12px;">Total (R$)</th></tr></thead>
+                    <tbody><tr><td id="rodape-qtd" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px;">0</td><td id="rodape-total" class="esconder-valor" style="border: 1px solid #000; padding: 12px; font-weight: bold; font-size: 18px; color: #2e7d32;">R$ 0,00</td></tr></tbody>
                 </table>
               </div>
             </div>
 
-            <!-- SARIPAN: Histórico -->
-            <div id="painel-historico" class="panel">
-                <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Registros e Relatórios</h3>
-                <div id="lista-quinzenas-container"></div>
-                <div id="msg-sem-dados" style="text-align:center; padding: 40px; color:#999; display:none;">Nenhum registro encontrado.</div>
-            </div>
-
-            <!-- SARIPAN: Financeiro -->
-            <div id="painel-financeiro" class="panel">
-                <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Financeiro Saripan</h3>
-                <div id="financeiro-content"></div>
-            </div>
+            <div id="painel-historico" class="panel"><h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Registros e Relatórios</h3><div id="lista-quinzenas-container"></div><div id="msg-sem-dados" style="text-align:center; padding: 40px; color:#999; display:none;">Nenhum registro encontrado.</div></div>
+            <div id="painel-financeiro" class="panel"><h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px;">Financeiro Saripan</h3><div id="financeiro-content"></div></div>
         </div>
     </div>
 
@@ -200,64 +108,41 @@
         <div class="form-box" style="margin-bottom: 15px; border-color: #90caf9; background: #e3f2fd; padding: 15px;">
             <h4 style="color: #0d47a1; margin-bottom: 10px; font-size: 14px;">⚙️ Salário Base Contratual</h4>
             <div style="display: flex; gap: 10px; align-items: flex-end;">
-                <div style="flex: 1;">
-                    <label style="font-size: 11px; color: #1565c0; font-weight: bold;">Valor Vigente (R$):</label>
-                    <input type="number" id="configSalarioBase" placeholder="0.00" style="padding: 10px; border: 1px solid #64b5f6; border-radius: 4px; width: 100%;">
-                </div>
+                <div style="flex: 1;"><label style="font-size: 11px; color: #1565c0; font-weight: bold;">Valor Vigente (R$):</label><input type="number" id="configSalarioBase" placeholder="0.00" style="padding: 10px; border: 1px solid #64b5f6; border-radius: 4px; width: 100%;"></div>
                 <button class="btn-action" style="background: #1565c0; width: auto; padding: 10px 20px; font-size: 13px;" onclick="salvarSalarioBase()">Salvar</button>
             </div>
         </div>
 
-        <!-- ================= MÓDULO SIMULADOR BLINDADO (V3.0) ================= -->
-        <div class="accordion-group" style="display: block !important; visibility: visible !important; opacity: 1 !important; margin-bottom: 20px; background: #fff; border: 1px solid #1565c0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <!-- ================= CALCULADORA CIRÚRGICA (BLINDADA CONTRA ADBLOCK) ================= -->
+        <div style="margin-bottom: 20px; background-color: #ffffff; border: 1px solid #1565c0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
             
-            <!-- HEADER DA SANFONA -->
-            <div class="accordion-header" 
-                 onclick="const c = document.getElementById('painel-simulador-oculto'); if(c.style.display === 'none') { c.style.display = 'block'; } else { c.style.display = 'none'; }" 
-                 style="background: #e3f2fd; border-radius: 8px; padding: 15px; cursor: pointer;">
+            <!-- HEADER DA CALCULADORA -->
+            <div onclick="const painel = document.getElementById('area-calculo-segura'); painel.style.display = (painel.style.display === 'none' ? 'block' : 'none');" 
+                 style="background-color: #e3f2fd; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                 
-                <h4 style="margin:0; color:#1565c0; display:flex; justify-content:space-between; align-items: center;">
-                    🧮 Simulador de Folha (Cirúrgico)
-                    <span style="font-size: 12px; background: #1565c0; color: #fff; padding: 4px 8px; border-radius: 4px;">▼ Clique para abrir</span>
-                </h4>
+                <h4 style="margin:0; color:#1565c0; font-size: 16px;">🧮 Simulador de Folha (Cirúrgico)</h4>
+                <span style="font-size: 12px; background-color: #1565c0; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: bold;">▼ Clique para abrir</span>
             </div>
             
-            <!-- CONTEÚDO DA SANFONA -->
-            <div class="accordion-content" id="painel-simulador-oculto" style="display: none; padding: 20px; border-top: 1px solid #90caf9;">
+            <!-- CONTEÚDO DA CALCULADORA (Nasce fechado) -->
+            <div id="area-calculo-segura" style="display: none; padding: 20px; border-top: 1px solid #90caf9;">
                 
-                <!-- O CÉREBRO: O CALENDÁRIO -->
-                <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border: 1px solid #90caf9; margin-bottom: 15px;">
+                <div style="background-color: #e3f2fd; padding: 15px; border-radius: 6px; border: 1px solid #90caf9; margin-bottom: 15px;">
                     <h4 style="color: #0d47a1; font-size: 13px; margin-bottom: 10px; border-bottom: 1px solid #bbdefb; padding-bottom: 5px;">📅 Motor de Calendário e DSR</h4>
                     
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
-                        <div>
-                            <label>Selecione o Mês da Folha:</label>
-                            <input type="month" id="calc-mes-ref" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                        </div>
-                        <div>
-                            <label>Feriados Regionais (Ex: 15/08):</label>
-                            <input type="text" id="calc-feriados-extras" placeholder="Ex: 15/08, 20/11" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                        </div>
+                        <div><label>Selecione o Mês da Folha:</label><input type="month" id="calc-mes-ref" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></div>
+                        <div><label>Feriados Regionais (Ex: 15/08):</label><input type="text" id="calc-feriados-extras" placeholder="Ex: 15/08, 20/11" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></div>
                     </div>
 
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 10px;">
-                        <div>
-                            <label>Dias Úteis:</label>
-                            <input type="number" id="calc-diasuteis" readonly style="background: #f0f0f0; color: #333; font-weight: bold;">
-                        </div>
-                        <div>
-                            <label>Dom / Feriados:</label>
-                            <input type="number" id="calc-domferiados" readonly style="background: #f0f0f0; color: #c62828; font-weight: bold;">
-                        </div>
-                        <div>
-                            <label>Dias do Mês:</label>
-                            <input type="number" id="calc-dias" readonly style="background: #f0f0f0; color: #333;">
-                        </div>
+                        <div><label>Dias Úteis:</label><input type="number" id="calc-diasuteis" readonly style="background-color: #f0f0f0; color: #333333; font-weight: bold;"></div>
+                        <div><label>Dom / Feriados:</label><input type="number" id="calc-domferiados" readonly style="background-color: #f0f0f0; color: #c62828; font-weight: bold;"></div>
+                        <div><label>Dias do Mês:</label><input type="number" id="calc-dias" readonly style="background-color: #f0f0f0; color: #333333;"></div>
                     </div>
                 </div>
 
-                <!-- PROVENTOS -->
-                <h4 style="font-size: 12px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px;">PROVENTOS (Horas Extras e Adicionais)</h4>
+                <h4 style="font-size: 12px; color: #333333; border-bottom: 1px solid #cccccc; padding-bottom: 5px; margin-bottom: 10px;">PROVENTOS (Horas Extras e Adicionais)</h4>
                 <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom:10px;">
                     <div><label>HE 50% (h):</label><input type="number" id="calc-he50" placeholder="0"></div>
                     <div><label>HE 60% (h):</label><input type="number" id="calc-he60" placeholder="0"></div>
@@ -270,8 +155,7 @@
                     <div><label>Adic. Noturno:</label><input type="number" id="calc-noturno" placeholder="0"></div>
                 </div>
 
-                <!-- DESCONTOS -->
-                <h4 style="font-size: 12px; color: #c62828; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px;">DESCONTOS E VARIÁVEIS</h4>
+                <h4 style="font-size: 12px; color: #c62828; border-bottom: 1px solid #cccccc; padding-bottom: 5px; margin-bottom: 10px;">DESCONTOS E VARIÁVEIS</h4>
                 <div class="grid-input" style="grid-template-columns: 1fr 1fr; margin-bottom:10px;">
                     <div><label>Faltas (dias):</label><input type="number" id="calc-faltas" placeholder="0"></div>
                     <div><label>Atrasos (horas):</label><input type="number" id="calc-atrasos" placeholder="0"></div>
@@ -293,68 +177,35 @@
                 </div>
                 
                 <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom:15px;">
-                    <div>
-                        <label>Sindicato:</label>
-                        <select id="calc-sindicato" style="padding:8px; width:100%; border:1px solid #ccc; border-radius:4px;">
-                            <option value="nao">Não</option>
-                            <option value="sim">Sim</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Desc. VT (6%):</label>
-                        <select id="calc-vt" style="padding:8px; width:100%; border:1px solid #ccc; border-radius:4px;">
-                            <option value="sim">Sim</option>
-                            <option value="nao">Não</option>
-                        </select>
-                    </div>
+                    <div><label>Sindicato:</label><select id="calc-sindicato" style="padding:8px; width:100%; border:1px solid #ccc; border-radius:4px;"><option value="nao">Não</option><option value="sim">Sim</option></select></div>
+                    <div><label>Desc. VT (6%):</label><select id="calc-vt" style="padding:8px; width:100%; border:1px solid #ccc; border-radius:4px;"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
                     <div><label>Dependentes:</label><input type="number" id="calc-dependentes" placeholder="0"></div>
                 </div>
                 
-                <button class="btn-action" style="background:#1565c0; font-size: 14px; padding: 15px;" onclick="calcularEInjetarModularCirurgico()">
+                <button class="btn-action" style="background-color:#1565c0; font-size: 14px; padding: 15px;" onclick="calcularEInjetarModularCirurgico()">
                     ⚙️ Calcular e Preencher Fechamento Abaixo
                 </button>
             </div>
         </div>
-        <!-- ================= FIM DO MÓDULO SIMULADOR ================= -->
+        <!-- ================= FIM DO SIMULADOR BLINDADO ================= -->
 
         <!-- FECHAMENTO MENSAL -->
         <div class="form-box">
             <h3 class="form-title">Fechamento Mensal (Modular)</h3>
-            
-            <label>Mês de Referência:</label>
-            <input type="month" id="mesModular" style="margin-bottom: 15px; padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 4px;" onchange="preencherFormularioModular()">
-            
+            <label>Mês de Referência:</label><input type="month" id="mesModular" style="margin-bottom: 15px; padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 4px;" onchange="preencherFormularioModular()">
             <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
-                <div>
-                    <label>Adiant. (Dia 15):</label>
-                    <input type="text" id="viewAdiantamento" readonly class="esconder-valor" style="background: #f5f5f5; color: #666; font-weight: bold;">
-                </div>
-                <div>
-                    <label>Salário Líq. (Dia 30):</label>
-                    <input type="number" id="inputSalarioLiquido" placeholder="0.00">
-                </div>
+                <div><label>Adiant. (Dia 15):</label><input type="text" id="viewAdiantamento" readonly class="esconder-valor" style="background: #f5f5f5; color: #666; font-weight: bold;"></div>
+                <div><label>Salário Líq. (Dia 30):</label><input type="number" id="inputSalarioLiquido" placeholder="0.00"></div>
             </div>
-            
             <div class="grid-input" style="margin-top: 10px;">
-                <div>
-                    <label>Extras (Opcional):</label>
-                    <input type="number" id="inputExtras" placeholder="0.00">
-                </div>
-                <div>
-                    <label>Desc. Extras:</label>
-                    <input type="text" id="descExtras" placeholder="Ex: Prêmio, PLR">
-                </div>
+                <div><label>Extras (Opcional):</label><input type="number" id="inputExtras" placeholder="0.00"></div>
+                <div><label>Desc. Extras:</label><input type="text" id="descExtras" placeholder="Ex: Prêmio, PLR"></div>
             </div>
-            
-            <div style="background: #e8f5e9; border: 1px dashed #a5d6a7; padding: 10px; margin-top: 15px; border-radius: 6px; text-align: center;">
-                <div style="font-size: 12px; color: #2e7d32; font-weight: bold;">Benefícios Fixos: + R$ 1.225,00</div>
-            </div>
-            
+            <div style="background: #e8f5e9; border: 1px dashed #a5d6a7; padding: 10px; margin-top: 15px; border-radius: 6px; text-align: center;"><div style="font-size: 12px; color: #2e7d32; font-weight: bold;">Benefícios Fixos: + R$ 1.225,00</div></div>
             <button class="btn-action btn-green" style="margin-top: 15px;" onclick="salvarMesModular()">💾 Salvar Fechamento Real</button>
         </div>
 
-        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Analítico Modular</h3>
-        <div id="lista-modular-container"></div>
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Analítico Modular</h3><div id="lista-modular-container"></div>
     </div>
 
     <!-- MÓDULO: VISÃO GERAL / EXTRAS -->
@@ -365,53 +216,12 @@
                 <div><label>Data:</label><input type="date" id="dataExtra" style="border: 1px solid #ffcc80;"></div>
                 <div><label>Valor (R$):</label><input type="number" id="valorExtra" placeholder="0.00" style="border: 1px solid #ffcc80;"></div>
             </div>
-            <div style="margin-top: 10px;">
-                <label>Descrição:</label>
-                <input type="text" id="descExtra" style="border: 1px solid #ffcc80; width: 100%;">
-            </div>
+            <div style="margin-top: 10px;"><label>Descrição:</label><input type="text" id="descExtra" style="border: 1px solid #ffcc80; width: 100%;"></div>
             <button class="btn-action" style="background-color: #f57c00; margin-top: 15px;" onclick="adicionarRegistroExtra()">➕ Adicionar</button>
         </div>
-        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Extras</h3>
-        <div id="lista-extra-container" style="margin-bottom: 30px;"></div>
-        
-        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Evolução Financeira</h3>
-        <div id="dashboard-geral-content"></div>
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Extras</h3><div id="lista-extra-container" style="margin-bottom: 30px;"></div>
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Evolução Financeira</h3><div id="dashboard-geral-content"></div>
     </div>
-
-  </div>
-
-  <!-- CONTAINER PRINT (Invisível) -->
-  <div id="print-container" style="position: absolute; top: -9999px; left: -9999px;">
-      <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
-          <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório</h1>
-          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
-              <div>Prestador: João Batista Rosa</div>
-              <div id="print-ref">Referência: --</div>
-          </div>
-          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 30px;">
-              <div style="font-weight: bold;">Resumo do Período:</div>
-              <div id="print-resumo"></div>
-              <div style="font-weight: bold; margin-top: 15px; font-size: 20px;" id="print-total-diarias">Total: -- diárias a receber</div>
-          </div>
-          <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
-              <thead>
-                  <tr style="background-color: #00AEEF; color: #000;">
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Data</th>
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Dia</th>
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Tipo</th>
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Detalhes</th>
-                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Valor</th>
-                  </tr>
-              </thead>
-              <tbody id="print-tbody"></tbody>
-              <tfoot>
-                  <tr>
-                      <td colspan="4" style="padding: 15px 12px; text-align: right; font-weight: bold; border: none;">Valor Total:</td>
-                      <td style="padding: 15px 12px; font-weight: bold; border: none; text-align: left;" id="print-valor-total">R$ 0.00</td>
-                  </tr>
-              </tfoot>
-          </table>
-      </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
