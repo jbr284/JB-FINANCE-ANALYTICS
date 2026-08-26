@@ -35,7 +35,7 @@
     <p style="color:#666; margin-bottom: 30px;">Acesso restrito - ERP</p>
     <input type="email" id="emailLogin" class="input-login" placeholder="E-mail" style="max-width: 300px;">
     <input type="password" id="senhaLogin" class="input-login" placeholder="Senha" style="max-width: 300px;">
-    <button class="btn-action btn-green" onclick="fazerLogin()" style="max-width: 300px;">Entrar</button>
+    <button class="btn-action btn-green" onclick="window.fazerLogin()" style="max-width: 300px;">Entrar</button>
   </div>
 
   <!-- TELA HUB -->
@@ -43,10 +43,10 @@
       <div class="hub-overlay"></div>
       <div class="hub-content">
           <div class="hub-title">JB Finance Analytics</div>
-          <button class="btn-vidro btn-sari-glass" onclick="abrirModulo('saripan')"><span class="btn-icone">🏢</span> Módulo SARIPAN</button>
-          <button class="btn-vidro btn-mod-glass" onclick="abrirModulo('modular')"><span class="btn-icone">🏭</span> Módulo MODULAR</button>
-          <button class="btn-vidro btn-geral-glass" onclick="abrirModulo('geral')"><span class="btn-icone">📊</span> VISÃO GERAL</button>
-          <button class="btn-vidro btn-sair-glass" onclick="sairApp()">Sair da Conta</button>
+          <button class="btn-vidro btn-sari-glass" onclick="window.abrirModulo('saripan')"><span class="btn-icone">🏢</span> Módulo SARIPAN</button>
+          <button class="btn-vidro btn-mod-glass" onclick="window.abrirModulo('modular')"><span class="btn-icone">🏭</span> Módulo MODULAR</button>
+          <button class="btn-vidro btn-geral-glass" onclick="window.abrirModulo('geral')"><span class="btn-icone">📊</span> VISÃO GERAL</button>
+          <button class="btn-vidro btn-sair-glass" onclick="window.sairApp()">Sair da Conta</button>
       </div>
   </div>
 
@@ -54,18 +54,18 @@
   <div id="app" class="container hidden">
     
     <div class="app-header">
-        <button class="btn-nav-top" onclick="voltarAoHub()">⬅ Voltar</button>
-        <div id="app-title" class="app-title">JB Finance Analytics V6.2</div>
-        <button id="btn-privacidade" class="btn-nav-top" onclick="togglePrivacidade()"></button>
+        <button class="btn-nav-top" onclick="window.voltarAoHub()">⬅ Voltar</button>
+        <div id="app-title" class="app-title">JB Finance Analytics V6.3</div>
+        <button id="btn-privacidade" class="btn-nav-top" onclick="window.togglePrivacidade()"></button>
     </div>
 
     <!-- MÓDULO: SARIPAN -->
     <div id="module-saripan" class="master-module active">
         <div class="fixed-area">
             <div class="tabs-container">
-              <button id="btn-tab-registrar" class="tab-btn active" onclick="mudarAba('registrar')">⏱️ Registrar</button>
-              <button id="btn-tab-historico" class="tab-btn" onclick="mudarAba('historico')">📋 Histórico</button>
-              <button id="btn-tab-financeiro" class="tab-btn" onclick="mudarAba('financeiro')">💰 Financeiro</button>
+              <button id="btn-tab-registrar" class="tab-btn active" onclick="window.mudarAba('registrar')">⏱️ Registrar</button>
+              <button id="btn-tab-historico" class="tab-btn" onclick="window.mudarAba('historico')">📋 Histórico</button>
+              <button id="btn-tab-financeiro" class="tab-btn" onclick="window.mudarAba('financeiro')">💰 Financeiro</button>
             </div>
         </div>
         
@@ -82,7 +82,7 @@
                   <div><label>Valor Base (R$):</label><input type="number" id="valorBase" value="130.00"></div>
                   <div><label>Previsão:</label><input type="text" id="previewValor" class="esconder-valor" readonly style="background: #eee; font-weight: bold; color: #2e7d32;"></div>
                 </div>
-                <button class="btn-action btn-green" onclick="adicionarRegistro()">✅ Confirmar Apontamento</button>
+                <button class="btn-action btn-green" onclick="window.adicionarRegistro()">✅ Confirmar Apontamento</button>
               </div>
               
               <div id="rodape-dinamico" style="margin-top: 25px; padding: 0 10px;">
@@ -103,8 +103,8 @@
         
         <div class="fixed-area">
             <div class="tabs-container">
-              <button id="btn-tab-mod-fechamento" class="tab-btn active" onclick="mudarAbaModular('fechamento')">📋 Fechamento</button>
-              <button id="btn-tab-mod-simulador" class="tab-btn" onclick="mudarAbaModular('simulador')">🧮 Simulador</button>
+              <button id="btn-tab-mod-fechamento" class="tab-btn active" onclick="window.mudarAbaModular('fechamento')">📋 Fechamento</button>
+              <button id="btn-tab-mod-simulador" class="tab-btn" onclick="window.mudarAbaModular('simulador')">🧮 Simulador</button>
             </div>
         </div>
         
@@ -115,13 +115,13 @@
                     <h4 style="color: #0d47a1; margin-bottom: 10px; font-size: 14px;">⚙️ Salário Base Contratual</h4>
                     <div style="display: flex; gap: 10px; align-items: flex-end;">
                         <div style="flex: 1;"><label style="font-size: 11px; color: #1565c0; font-weight: bold;">Valor Vigente (R$):</label><input type="number" id="configSalarioBase" placeholder="0.00" style="padding: 10px; border: 1px solid #64b5f6; border-radius: 4px; width: 100%;"></div>
-                        <button class="btn-action" style="background: #1565c0; width: auto; padding: 10px 20px; font-size: 13px;" onclick="salvarSalarioBase()">Salvar</button>
+                        <button class="btn-action" style="background: #1565c0; width: auto; padding: 10px 20px; font-size: 13px;" onclick="window.salvarSalarioBase()">Salvar</button>
                     </div>
                 </div>
 
                 <div class="form-box">
                     <h3 class="form-title">Fechamento Mensal (Modular)</h3>
-                    <label>Mês de Referência:</label><input type="month" id="mesModular" style="margin-bottom: 15px; padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 4px;" onchange="preencherFormularioModular()">
+                    <label>Mês de Referência:</label><input type="month" id="mesModular" style="margin-bottom: 15px; padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 4px;" onchange="window.preencherFormularioModular()">
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
                         <div><label>Adiant. (Dia 15):</label><input type="text" id="viewAdiantamento" readonly class="esconder-valor" style="background: #f5f5f5; color: #666; font-weight: bold;"></div>
                         <div><label>Salário Líq. (Dia 30):</label><input type="number" id="inputSalarioLiquido" placeholder="0.00"></div>
@@ -131,7 +131,7 @@
                         <div><label>Desc. Extras:</label><input type="text" id="descExtras" placeholder="Ex: Prêmio, PLR"></div>
                     </div>
                     <div style="background: #e8f5e9; border: 1px dashed #a5d6a7; padding: 10px; margin-top: 15px; border-radius: 6px; text-align: center;"><div style="font-size: 12px; color: #2e7d32; font-weight: bold;">Benefícios Fixos: + R$ 1.225,00</div></div>
-                    <button class="btn-action btn-green" style="margin-top: 15px;" onclick="salvarMesModular()">💾 Salvar Fechamento Real</button>
+                    <button class="btn-action btn-green" style="margin-top: 15px;" onclick="window.salvarMesModular()">💾 Salvar Fechamento Real</button>
                 </div>
 
                 <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Analítico Modular</h3>
@@ -181,9 +181,9 @@
                         <div><label>Dependentes:</label><input type="number" id="calc-dependentes" placeholder="0"></div>
                     </div>
                     
-                    <button class="btn-action" style="background:#e65100; font-size: 13px; padding: 12px; margin-bottom: 20px;" onclick="memorizarPadroesCalculadora()">💾 Memorizar Padrões de Desconto</button>
+                    <button class="btn-action" style="background:#e65100; font-size: 13px; padding: 12px; margin-bottom: 20px;" onclick="window.memorizarPadroesCalculadora()">💾 Memorizar Padrões de Desconto</button>
                     
-                    <button class="btn-action btn-green" style="font-size: 15px; padding: 18px;" onclick="calcularEInjetarModularCirurgico()">⚙️ Calcular e Preencher Fechamento</button>
+                    <button class="btn-action btn-green" style="font-size: 15px; padding: 18px;" onclick="window.calcularEInjetarModularCirurgico()">⚙️ Calcular e Preencher Fechamento</button>
                 </div>
             </div>
             
@@ -199,7 +199,7 @@
                 <div><label>Valor (R$):</label><input type="number" id="valorExtra" placeholder="0.00" style="border: 1px solid #ffcc80;"></div>
             </div>
             <div style="margin-top: 10px;"><label>Descrição:</label><input type="text" id="descExtra" style="border: 1px solid #ffcc80; width: 100%;"></div>
-            <button class="btn-action" style="background-color: #f57c00; margin-top: 15px;" onclick="adicionarRegistroExtra()">➕ Adicionar</button>
+            <button class="btn-action" style="background-color: #f57c00; margin-top: 15px;" onclick="window.adicionarRegistroExtra()">➕ Adicionar</button>
         </div>
         <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Extras</h3><div id="lista-extra-container" style="margin-bottom: 30px;"></div>
         <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Evolução Financeira</h3><div id="dashboard-geral-content"></div>
@@ -242,7 +242,9 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script type="module" src="app.js"></script>
+  
+  <!-- O TRUQUE: O "?v=6.3" força o navegador a baixar o app.js NOVO e ignorar o cache! -->
+  <script type="module" src="app.js?v=6.3"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
