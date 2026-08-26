@@ -24,7 +24,7 @@ const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 const BENEFICIOS_FIXOS = 1225;
 
 // ==========================================
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO E PADRÕES
 // ==========================================
 window.carregarTodosOsDados = async () => {
     try {
@@ -46,7 +46,7 @@ window.carregarTodosOsDados = async () => {
                 if (inputBase) inputBase.value = base;
             }
             
-            // CARREGA OS PADRÕES MEMORIZADOS DA CALCULADORA
+            // CARREGA OS PADRÕES DA CALCULADORA
             const padroesSnap = await getDoc(doc(db, "configuracoes", "modular_padroes"));
             if (padroesSnap.exists()) {
                 const p = padroesSnap.data();
@@ -140,14 +140,29 @@ window.salvarMesModular = async () => {
     const mesStr = document.getElementById('mesModular').value;
     if (!mesStr) return alert("Selecione o mês de referência.");
 
-    const salarioBase = parseFloat(localStorage.getItem('modular_salario_base')) || 0;
-    if (salarioBase <= 0) return alert("Configure o Salário Base primeiro!");
-
+    // REGRA DE BLOQUEIO DO DIA 30
     const [anoStr, mesStrNum] = mesStr.split('-');
     const ano = parseInt(anoStr);
     const mes = parseInt(mesStrNum) - 1;
-    const idUnico = `MOD-${ano}-${mes + 1}`;
 
+    // Calcula o último dia do mês para garantir que lida com Fevereiro (28/29)
+    const ultimoDiaDoMes = new Date(ano, mes + 1, 0).getDate();
+    const diaLimite = Math.min(30, ultimoDiaDoMes);
+    
+    const dataLiberacao = new Date(ano, mes, diaLimite);
+    dataLiberacao.setHours(0,0,0,0);
+
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    if (hoje < dataLiberacao) {
+        return alert(`BLOQUEIO DE SISTEMA:\n\nOs valores de fechamento só podem entrar no sistema a partir do dia ${diaLimite} do mês de referência (${MESES[mes]}/${ano}).\n\nHoje é dia ${hoje.getDate()}. O cálculo no simulador está liberado para conferência, mas o Fechamento Real não pode ser salvo antecipadamente.`);
+    }
+
+    const salarioBase = parseFloat(localStorage.getItem('modular_salario_base')) || 0;
+    if (salarioBase <= 0) return alert("Configure o Salário Base primeiro!");
+
+    const idUnico = `MOD-${ano}-${mes + 1}`;
     const adiantamento = salarioBase * 0.40;
     const salarioLiq = parseFloat(document.getElementById('inputSalarioLiquido').value) || 0;
     const extras = parseFloat(document.getElementById('inputExtras').value) || 0;
@@ -597,7 +612,7 @@ window.abrirModulo = (modulo) => {
     if (modEl) modEl.classList.add('active');
     
     const titulos = { 'saripan': 'Módulo SARIPAN', 'modular': 'Módulo MODULAR', 'geral': 'Visão Geral (Evolução)' };
-    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.4';
+    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.5';
     
     if (modulo === 'geral' && window.renderizarDashboardGeral) window.renderizarDashboardGeral();
     if (modulo === 'modular') { 
@@ -631,7 +646,6 @@ const regrasCirurgicas = {
     planosSESI: { nenhum: 0, basico_individual: 29, basico_familiar: 58, plus_individual: 120, plus_familiar: 189 }
 };
 
-// === NOVA LÓGICA: CONVERTER HORAS (6:15 ou 6h15 -> 6.25) ===
 window.converterParaDecimal = (valor) => {
     if (!valor) return '';
     valor = valor.toString().toLowerCase().trim().replace(',', '.');
@@ -713,7 +727,6 @@ window.calcularEInjetarModularCirurgico = () => {
     const dependentes = parseFloat(document.getElementById('calc-dependentes').value) || 0;
     const faltas = parseFloat(document.getElementById('calc-faltas').value) || 0;
     
-    // Agora o sistema garante que lê como número (graças ao conversor e parseFloat)
     const atrasos = parseFloat(document.getElementById('calc-atrasos').value) || 0;
     const he50 = parseFloat(document.getElementById('calc-he50').value) || 0;
     const he60 = parseFloat(document.getElementById('calc-he60').value) || 0;
@@ -780,12 +793,80 @@ window.calcularEInjetarModularCirurgico = () => {
     const totalDescontos = descontoFaltas + descontoAtrasos + descontoPlano + coparticipacao + descontoSindicato + emprestimo + inss + irrf + descontoVA + adiantamento + descontoVT;
     const liquido = totalBruto - totalDescontos;
 
+    // INJETA NO SISTEMA
     document.getElementById('inputSalarioLiquido').value = liquido.toFixed(2);
     document.getElementById('viewAdiantamento').value = `R$ ${adiantamento.toFixed(2)}`;
-    
     document.getElementById('mesModular').value = document.getElementById('calc-mes-ref').value;
-    window.mudarAbaModular('fechamento');
-    window.mostrarToast(`Cálculo injetado: R$ ${liquido.toFixed(2)}`);
+    
+    // GERA A TABELA DE AUDITORIA
+    let htmlTable = `
+        <div style="background: #fff; border: 1px solid #1565c0; border-radius: 8px; overflow: hidden; margin-top: 20px;">
+            <h4 style="background: #1565c0; color: white; margin: 0; padding: 10px; text-align: center; font-size: 14px;">📑 Memória de Cálculo (Auditoria)</h4>
+            <div style="padding: 15px; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                    <tr style="border-bottom: 2px solid #ccc;">
+                        <th style="padding: 8px;">Descrição</th>
+                        <th style="padding: 8px;">Ref.</th>
+                        <th style="padding: 8px; text-align: right;">Proventos</th>
+                        <th style="padding: 8px; text-align: right;">Descontos</th>
+                    </tr>
+    `;
+
+    const addRow = (desc, ref, prov, descV) => {
+        htmlTable += `<tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px;">${desc}</td>
+            <td style="padding: 8px; color: #666;">${ref}</td>
+            <td style="padding: 8px; text-align: right; color: #2e7d32;">${prov ? 'R$ ' + prov.toFixed(2) : ''}</td>
+            <td style="padding: 8px; text-align: right; color: #c62828;">${descV ? 'R$ ' + descV.toFixed(2) : ''}</td>
+        </tr>`;
+    };
+
+    if (vencBase > 0) addRow('Salário Base (Dias Trab)', `${diasTrab} d`, vencBase, null);
+    if (valorHE50 > 0) addRow('Horas Extras 50%', `${he50} h`, valorHE50, null);
+    if (valorHE60 > 0) addRow('Horas Extras 60%', `${he60} h`, valorHE60, null);
+    if (valorHE80 > 0) addRow('Horas Extras 80%', `${he80} h`, valorHE80, null);
+    if (valorHE100 > 0) addRow('Horas Extras 100%', `${he100} h`, valorHE100, null);
+    if (valorHE150 > 0) addRow('Horas Extras 150%', `${he150} h`, valorHE150, null);
+    if (valorNoturno > 0) addRow('Adicional Noturno', `${noturno} h`, valorNoturno, null);
+    if (dsrHE > 0) addRow('DSR s/ Horas Extras', `${domFeriados} d`, dsrHE, null);
+    if (dsrNoturno > 0) addRow('DSR s/ Adic. Noturno', `${domFeriados} d`, dsrNoturno, null);
+
+    if (descontoFaltas > 0) addRow('Faltas', `${faltas} d`, null, descontoFaltas);
+    if (descontoAtrasos > 0) addRow('Atrasos', `${atrasos} h`, null, descontoAtrasos);
+    if (adiantamento > 0) addRow('Adiantamento (Dia 15)', '40%', null, adiantamento);
+    if (inss > 0) addRow('INSS', `Base R$ ${baseINSS.toFixed(2)}`, null, inss);
+    if (irrf > 0) addRow('IRRF', `Base R$ ${baseIRRF.toFixed(2)}`, null, irrf);
+    if (descontoVA > 0) addRow('Vale Alimentação', 'Fixo', null, descontoVA);
+    if (descontoVT > 0) addRow('Vale Transporte', '6%', null, descontoVT);
+    if (descontoPlano > 0) addRow('Plano SESI', plano, null, descontoPlano);
+    if (coparticipacao > 0) addRow('Coparticipação', '-', null, coparticipacao);
+    if (descontoSindicato > 0) addRow('Contr. Sindical', '-', null, descontoSindicato);
+    if (emprestimo > 0) addRow('Empréstimo', '-', null, emprestimo);
+
+    htmlTable += `
+                    <tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ccc;">
+                        <td colspan="2" style="padding: 10px;">TOTAIS</td>
+                        <td style="padding: 10px; text-align: right; color: #2e7d32;">R$ ${totalBruto.toFixed(2)}</td>
+                        <td style="padding: 10px; text-align: right; color: #c62828;">R$ ${totalDescontos.toFixed(2)}</td>
+                    </tr>
+                    <tr style="background: #e3f2fd; font-weight: bold; font-size: 14px;">
+                        <td colspan="2" style="padding: 12px; color: #0d47a1;">LÍQUIDO A RECEBER</td>
+                        <td colspan="2" style="padding: 12px; text-align: right; color: #0d47a1;">R$ ${liquido.toFixed(2)}</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="background: #e8f5e9; padding: 10px; text-align: center; font-size: 12px; color: #1b5e20;">
+                O Salário Líquido e o Adiantamento já foram enviados para a aba <b>Fechamento</b>. 
+                Pode auditar os valores acima e salvar!
+            </div>
+        </div>
+    `;
+
+    const divAuditoria = document.getElementById('tabela-auditoria');
+    divAuditoria.innerHTML = htmlTable;
+    divAuditoria.style.display = 'block';
+
+    window.mostrarToast(`Cálculo injetado com sucesso!`);
 };
 
 // Listeners Base
@@ -810,7 +891,6 @@ window.addEventListener('DOMContentLoaded', () => {
     if (mesRefCalc) mesRefCalc.addEventListener('change', window.atualizarCalendarioCirurgico);
     if (feriadosExtrasCalc) feriadosExtrasCalc.addEventListener('blur', window.atualizarCalendarioCirurgico);
     
-    // EVENTO DE CONVERSÃO DE HORAS (Ouve quando você sai do campo)
     document.querySelectorAll('.input-horas').forEach(input => {
         input.addEventListener('blur', function() {
             this.value = window.converterParaDecimal(this.value);
