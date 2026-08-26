@@ -55,7 +55,7 @@
     
     <div class="app-header">
         <button class="btn-nav-top" onclick="window.voltarAoHub()">⬅ Voltar</button>
-        <div id="app-title" class="app-title">JB Finance Analytics V6.3</div>
+        <div id="app-title" class="app-title">JB Finance Analytics V6.4</div>
         <button id="btn-privacidade" class="btn-nav-top" onclick="window.togglePrivacidade()"></button>
     </div>
 
@@ -153,22 +153,23 @@
                         </div>
                     </div>
 
+                    <!-- CAMPOS DE HORAS CONVERTIDOS PARA TYPE="TEXT" COM A CLASSE "input-horas" -->
                     <h4 style="font-size: 12px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px;">PROVENTOS (Horas Extras e Adicionais)</h4>
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom:10px;">
-                        <div><label>HE 50% (h):</label><input type="number" id="calc-he50" placeholder="0"></div>
-                        <div><label>HE 60% (h):</label><input type="number" id="calc-he60" placeholder="0"></div>
-                        <div><label>HE 80% (h):</label><input type="number" id="calc-he80" placeholder="0"></div>
+                        <div><label>HE 50% (h):</label><input type="text" id="calc-he50" class="input-horas" placeholder="Ex: 6:15"></div>
+                        <div><label>HE 60% (h):</label><input type="text" id="calc-he60" class="input-horas" placeholder="Ex: 6:15"></div>
+                        <div><label>HE 80% (h):</label><input type="text" id="calc-he80" class="input-horas" placeholder="Ex: 6:15"></div>
                     </div>
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom:20px;">
-                        <div><label>HE 100% (h):</label><input type="number" id="calc-he100" placeholder="0"></div>
-                        <div><label>HE 150% (h):</label><input type="number" id="calc-he150" placeholder="0"></div>
-                        <div><label>Adic. Noturno:</label><input type="number" id="calc-noturno" placeholder="0"></div>
+                        <div><label>HE 100% (h):</label><input type="text" id="calc-he100" class="input-horas" placeholder="Ex: 6:15"></div>
+                        <div><label>HE 150% (h):</label><input type="text" id="calc-he150" class="input-horas" placeholder="Ex: 6:15"></div>
+                        <div><label>Adic. Noturno:</label><input type="text" id="calc-noturno" class="input-horas" placeholder="Ex: 6:15"></div>
                     </div>
 
                     <h4 style="font-size: 12px; color: #c62828; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px;">DESCONTOS E VARIÁVEIS</h4>
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr; margin-bottom:10px;">
                         <div><label>Faltas (dias):</label><input type="number" id="calc-faltas" placeholder="0"></div>
-                        <div><label>Atrasos (horas):</label><input type="number" id="calc-atrasos" placeholder="0"></div>
+                        <div><label>Atrasos (horas):</label><input type="text" id="calc-atrasos" class="input-horas" placeholder="Ex: 1:30"></div>
                     </div>
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom:10px;">
                         <div><label>Plano SESI:</label><select id="calc-plano" style="padding:8px; width:100%; border:1px solid #ccc; border-radius:4px;"><option value="nenhum">Nenhum</option><option value="basico_individual">Básico Indiv.</option><option value="basico_familiar">Básico Fam.</option><option value="plus_individual">Plus Indiv.</option><option value="plus_familiar">Plus Fam.</option></select></div>
@@ -182,7 +183,6 @@
                     </div>
                     
                     <button class="btn-action" style="background:#e65100; font-size: 13px; padding: 12px; margin-bottom: 20px;" onclick="window.memorizarPadroesCalculadora()">💾 Memorizar Padrões de Desconto</button>
-                    
                     <button class="btn-action btn-green" style="font-size: 15px; padding: 18px;" onclick="window.calcularEInjetarModularCirurgico()">⚙️ Calcular e Preencher Fechamento</button>
                 </div>
             </div>
@@ -242,9 +242,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- O TRUQUE: O "?v=6.3" força o navegador a baixar o app.js NOVO e ignorar o cache! -->
-  <script type="module" src="app.js?v=6.3"></script>
+  <script type="module" src="app.js?v=6.4"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
