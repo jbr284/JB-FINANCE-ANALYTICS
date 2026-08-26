@@ -633,3 +633,32 @@ window.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('mesModular')) document.getElementById('mesModular').value = `${ano}-${mes}`;
     ['valorBase', 'tipoCarga', 'tipoDia'].forEach(id => { document.getElementById(id)?.addEventListener('input', window.atualizarPreview); });
 });
+// ==========================================
+// INJEÇÃO FORÇADA DA JANELA BLINDADA
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        // Verifica se a calculadora já não existe para não duplicar
+        if (!document.getElementById('iframe-calculadora')) {
+            // Encontra a caixa do Salário Base Contratual
+            const salarioBaseBox = document.querySelector('#module-modular .form-box');
+            
+            if (salarioBaseBox) {
+                const janelaBlindada = `
+                    <div style="margin-bottom: 20px; background-color: #ffffff; border: 1px solid #1565c0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+                        <div onclick="const frame = document.getElementById('iframe-calculadora'); frame.style.display = (frame.style.display === 'none' ? 'block' : 'none');" 
+                             style="background-color: #e3f2fd; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin:0; color:#1565c0; font-size: 16px;">🧮 Simulador de Folha (Cirúrgico)</h4>
+                            <span style="font-size: 12px; background-color: #1565c0; color: #ffffff; padding: 5px 10px; border-radius: 4px; font-weight: bold;">▼ Clique para abrir</span>
+                        </div>
+                        <div id="iframe-calculadora" style="display: none; padding: 0; border-top: 1px solid #90caf9;">
+                            <iframe src="calculadora.html" style="width: 100%; height: 850px; border: none; display: block;"></iframe>
+                        </div>
+                    </div>`;
+                
+                // Injeta a janela exatamente abaixo do Salário Base
+                salarioBaseBox.insertAdjacentHTML('afterend', janelaBlindada);
+            }
+        }
+    }, 500); // Aguarda meio segundo para garantir que a tela carregou
+});
