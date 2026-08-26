@@ -1,45 +1,30 @@
-const CACHE_NAME = 'jb-finance-v6';
-const urlsToCache = [
-    './',
-    './index.html',
-    './calculadora.html',
-    './style.css',
-    './app.js',
-    './manifest.json',
-    './icon-192x192.png',
-    './JBFINANCELOGO.png'
+const CACHE_NAME = 'REMUN-JB-V7.1'; 
+
+const ASSETS = [
+  './',
+  './index.html',
+  './style.css',     
+  './app.js',        
+  './manifest.json',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js',
+  'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
-// Instalação do Service Worker
-self.addEventListener('install', event => {
-    self.skipWaiting();
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
-    );
+self.addEventListener('install', (e) => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
 });
 
-// Ativação e limpeza de Caches Antigos
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cache => {
-                    if (cache !== CACHE_NAME) {
-                        return caches.delete(cache);
-                    }
-                })
-            );
-        })
-    );
-    self.clients.claim();
+self.addEventListener('activate', (e) => {
+  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.map((k) => {
+    if (k !== CACHE_NAME) return caches.delete(k);
+  }))));
+  self.clients.claim();
 });
 
-// Estratégia "Network First" (Sempre busca o mais recente, fallback para cache se offline)
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
-        })
-    );
+self.addEventListener('fetch', (e) => {
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
