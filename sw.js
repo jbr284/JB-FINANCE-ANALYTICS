@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jb-finance-v5';
+const CACHE_NAME = 'jb-finance-v6';
 const urlsToCache = [
     './',
     './index.html',
