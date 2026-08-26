@@ -145,7 +145,6 @@ window.salvarMesModular = async () => {
     const ano = parseInt(anoStr);
     const mes = parseInt(mesStrNum) - 1;
 
-    // Calcula o último dia do mês para garantir que lida com Fevereiro (28/29)
     const ultimoDiaDoMes = new Date(ano, mes + 1, 0).getDate();
     const diaLimite = Math.min(30, ultimoDiaDoMes);
     
@@ -612,7 +611,7 @@ window.abrirModulo = (modulo) => {
     if (modEl) modEl.classList.add('active');
     
     const titulos = { 'saripan': 'Módulo SARIPAN', 'modular': 'Módulo MODULAR', 'geral': 'Visão Geral (Evolução)' };
-    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.5';
+    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.6';
     
     if (modulo === 'geral' && window.renderizarDashboardGeral) window.renderizarDashboardGeral();
     if (modulo === 'modular') { 
@@ -723,7 +722,11 @@ window.calcularEInjetarModularCirurgico = () => {
 
     if (diasUteis === 0 && domFeriados === 0) return alert("Selecione o Mês da Folha no calendário para gerar os Dias Úteis e Feriados!");
 
-    const diasTrab = parseFloat(document.getElementById('calc-dias').value) || 30;
+    // ==========================================
+    // CORREÇÃO: O Salário de Mensalista é sempre 30 dias na base
+    // ==========================================
+    const diasTrabMensalista = 30; 
+    
     const dependentes = parseFloat(document.getElementById('calc-dependentes').value) || 0;
     const faltas = parseFloat(document.getElementById('calc-faltas').value) || 0;
     
@@ -744,7 +747,9 @@ window.calcularEInjetarModularCirurgico = () => {
     const valorDia = salarioBase / 30;
     const valorHora = salarioBase / 220;
 
-    const vencBase = valorDia * diasTrab;
+    // A base do mensalista não muda com os dias do mês
+    const vencBase = salarioBase; 
+    
     const valorHE50 = he50 * valorHora * 1.5;
     const valorHE60 = he60 * valorHora * 1.6;
     const valorHE80 = he80 * valorHora * 1.8;
@@ -760,7 +765,8 @@ window.calcularEInjetarModularCirurgico = () => {
 
     const descontoFaltas = faltas * valorDia;
     const descontoAtrasos = atrasos * valorHora;
-    const adiantamento = (salarioBase / 30) * diasTrab * regrasCirurgicas.percentualAdiantamento;
+    // O Adiantamento do mensalista é fixo com base no salário, não flutua com dias do mês
+    const adiantamento = salarioBase * regrasCirurgicas.percentualAdiantamento;
     const descontoVA = regrasCirurgicas.descontoFixoVA;
     const descontoVT = descontarVT ? (salarioBase * regrasCirurgicas.percentualVT) : 0;
     
@@ -793,10 +799,8 @@ window.calcularEInjetarModularCirurgico = () => {
     const totalDescontos = descontoFaltas + descontoAtrasos + descontoPlano + coparticipacao + descontoSindicato + emprestimo + inss + irrf + descontoVA + adiantamento + descontoVT;
     const liquido = totalBruto - totalDescontos;
 
-    // INJETA NO SISTEMA
     document.getElementById('inputSalarioLiquido').value = liquido.toFixed(2);
     document.getElementById('viewAdiantamento').value = `R$ ${adiantamento.toFixed(2)}`;
-    document.getElementById('mesModular').value = document.getElementById('calc-mes-ref').value;
     
     // GERA A TABELA DE AUDITORIA
     let htmlTable = `
@@ -821,7 +825,7 @@ window.calcularEInjetarModularCirurgico = () => {
         </tr>`;
     };
 
-    if (vencBase > 0) addRow('Salário Base (Dias Trab)', `${diasTrab} d`, vencBase, null);
+    if (vencBase > 0) addRow('Salário Base Contratual', '30 d', vencBase, null);
     if (valorHE50 > 0) addRow('Horas Extras 50%', `${he50} h`, valorHE50, null);
     if (valorHE60 > 0) addRow('Horas Extras 60%', `${he60} h`, valorHE60, null);
     if (valorHE80 > 0) addRow('Horas Extras 80%', `${he80} h`, valorHE80, null);
