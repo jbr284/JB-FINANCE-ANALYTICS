@@ -570,10 +570,8 @@ window.mudarAba = (aba) => {
 window.mudarAbaModular = (aba) => {
     document.querySelectorAll('#module-modular .panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('#module-modular .tab-btn').forEach(b => b.classList.remove('active'));
-    
     const panel = document.getElementById(`painel-mod-${aba}`);
     const btn = document.getElementById(`btn-tab-mod-${aba}`);
-    
     if (panel) panel.classList.add('active'); 
     if (btn) btn.classList.add('active');
 };
@@ -586,7 +584,7 @@ window.abrirModulo = (modulo) => {
     if (modEl) modEl.classList.add('active');
     
     const titulos = { 'saripan': 'Módulo SARIPAN', 'modular': 'Módulo MODULAR', 'geral': 'Visão Geral (Evolução)' };
-    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.0';
+    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.1';
     
     if (modulo === 'geral' && window.renderizarDashboardGeral) window.renderizarDashboardGeral();
     if (modulo === 'modular') { 
@@ -609,6 +607,143 @@ window.fazerLogin = async () => {
 
 window.sairApp = async () => { if (confirm("Deseja sair?")) await signOut(auth); };
 
+// ==========================================
+// MOTOR DA CALCULADORA CIRÚRGICA
+// ==========================================
+const regrasCirurgicas = {
+    tetoINSS: 8475.55, percentualAdiantamento: 0.4, percentualAdicionalNoturno: 0.35,
+    descontoFixoVA: 23.97, percentualVT: 0.06, valorSindicato: 50.00, deducaoPorDependenteIRRF: 189.59,
+    tabelaINSS: [ { ate: 1621.00, aliquota: 0.075, deduzir: 0 }, { ate: 2902.84, aliquota: 0.09, deduzir: 24.32 }, { ate: 4354.27, aliquota: 0.12, deduzir: 111.40 }, { ate: 8475.55, aliquota: 0.14, deduzir: 198.49 } ],
+    tabelaIRRF: [ { ate: 2428.80, aliquota: 0, deduzir: 0 }, { ate: 2826.65, aliquota: 0.075, deduzir: 182.16 }, { ate: 3751.05, aliquota: 0.15, deduzir: 394.16 }, { ate: 4664.68, aliquota: 0.225, deduzir: 675.49 }, { ate: "acima", aliquota: 0.275, deduzir: 908.73 } ],
+    planosSESI: { nenhum: 0, basico_individual: 29, basico_familiar: 58, plus_individual: 120, plus_familiar: 189 }
+};
+
+window.atualizarCalendarioCirurgico = () => {
+    const mesStr = document.getElementById('calc-mes-ref').value;
+    if (!mesStr) return;
+    const [ano, mes] = mesStr.split('-').map(Number);
+    const extrasStr = document.getElementById('calc-feriados-extras').value;
+    const extrasArray = extrasStr ? extrasStr.split(',').map(d => d.trim()) : [];
+    const diasNoMes = new Date(ano, mes, 0).getDate();
+
+    const a = ano % 19; const b = Math.floor(ano / 100); const c = ano % 100;
+    const d = Math.floor(b / 4); const e = b % 4; const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3); const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4); const k = c % 4; const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const mesPascoa = Math.floor((h + l - 7 * m + 114) / 31);
+    const diaPascoa = ((h + l - 7 * m + 114) % 31) + 1;
+
+    const pascoa = new Date(ano, mesPascoa - 1, diaPascoa);
+    const sextaSanta = new Date(pascoa); sextaSanta.setDate(pascoa.getDate() - 2);
+    const carnaval = new Date(pascoa); carnaval.setDate(pascoa.getDate() - 47);
+    const corpusChristi = new Date(pascoa); corpusChristi.setDate(pascoa.getDate() + 60);
+
+    const formatarDDMM = (dt) => String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0');
+    const feriadosMoveis = [formatarDDMM(sextaSanta), formatarDDMM(carnaval), formatarDDMM(corpusChristi)];
+    const feriadosFixos = ["01/01", "21/04", "01/05", "07/09", "12/10", "02/11", "15/11", "25/12"];
+
+    let diasUteis = 0; let domFeriados = 0;
+
+    for (let dia = 1; dia <= diasNoMes; dia++) {
+        const dataAtual = new Date(ano, mes - 1, dia);
+        const diaSemana = dataAtual.getDay();
+        const dataStr = String(dia).padStart(2, '0') + '/' + String(mes).padStart(2, '0');
+
+        if (diaSemana === 0 || feriadosFixos.includes(dataStr) || feriadosMoveis.includes(dataStr) || extrasArray.includes(dataStr)) { domFeriados++; } else { diasUteis++; }
+    }
+
+    document.getElementById('calc-diasuteis').value = diasUteis;
+    document.getElementById('calc-domferiados').value = domFeriados;
+    document.getElementById('calc-dias').value = diasNoMes;
+};
+
+window.calcularEInjetarModularCirurgico = () => {
+    const salarioBase = parseFloat(localStorage.getItem('modular_salario_base')) || 0;
+    if (salarioBase <= 0) return alert("Configure e Salve o Salário Base Contratual primeiro!");
+
+    const diasUteis = parseFloat(document.getElementById('calc-diasuteis').value) || 0;
+    const domFeriados = parseFloat(document.getElementById('calc-domferiados').value) || 0;
+
+    if (diasUteis === 0 && domFeriados === 0) return alert("Selecione o Mês da Folha no calendário para gerar os Dias Úteis e Feriados!");
+
+    const diasTrab = parseFloat(document.getElementById('calc-dias').value) || 30;
+    const dependentes = parseFloat(document.getElementById('calc-dependentes').value) || 0;
+    const faltas = parseFloat(document.getElementById('calc-faltas').value) || 0;
+    const atrasos = parseFloat(document.getElementById('calc-atrasos').value) || 0;
+    const he50 = parseFloat(document.getElementById('calc-he50').value) || 0;
+    const he60 = parseFloat(document.getElementById('calc-he60').value) || 0;
+    const he80 = parseFloat(document.getElementById('calc-he80').value) || 0;
+    const he100 = parseFloat(document.getElementById('calc-he100').value) || 0;
+    const he150 = parseFloat(document.getElementById('calc-he150').value) || 0;
+    const noturno = parseFloat(document.getElementById('calc-noturno').value) || 0;
+    
+    const plano = document.getElementById('calc-plano').value;
+    const coparticipacao = parseFloat(document.getElementById('calc-copart').value) || 0;
+    const sindicato = document.getElementById('calc-sindicato').value;
+    const emprestimo = parseFloat(document.getElementById('calc-emprestimo').value) || 0;
+    const descontarVT = document.getElementById('calc-vt').value === 'sim';
+
+    const valorDia = salarioBase / 30;
+    const valorHora = salarioBase / 220;
+
+    const vencBase = valorDia * diasTrab;
+    const valorHE50 = he50 * valorHora * 1.5;
+    const valorHE60 = he60 * valorHora * 1.6;
+    const valorHE80 = he80 * valorHora * 1.8;
+    const valorHE100 = he100 * valorHora * 2.0;
+    const valorHE150 = he150 * valorHora * 2.5;
+    const valorNoturno = noturno * valorHora * regrasCirurgicas.percentualAdicionalNoturno;
+    
+    const totalHE = valorHE50 + valorHE60 + valorHE80 + valorHE100 + valorHE150;
+    const dsrHE = (diasUteis > 0) ? (totalHE / diasUteis) * domFeriados : 0;
+    const dsrNoturno = (diasUteis > 0) ? (valorNoturno / diasUteis) * domFeriados : 0;
+    
+    const totalBruto = vencBase + totalHE + valorNoturno + dsrHE + dsrNoturno;
+
+    const descontoFaltas = faltas * valorDia;
+    const descontoAtrasos = atrasos * valorHora;
+    const adiantamento = (salarioBase / 30) * diasTrab * regrasCirurgicas.percentualAdiantamento;
+    const descontoVA = regrasCirurgicas.descontoFixoVA;
+    const descontoVT = descontarVT ? (salarioBase * regrasCirurgicas.percentualVT) : 0;
+    
+    const baseINSS = totalBruto - descontoFaltas - descontoAtrasos;
+    let inss = 0;
+    let baseTemp = baseINSS > regrasCirurgicas.tetoINSS ? regrasCirurgicas.tetoINSS : baseINSS;
+    for (const faixa of regrasCirurgicas.tabelaINSS) {
+        if (baseTemp <= faixa.ate) { inss = (baseTemp * faixa.aliquota) - faixa.deduzir; break; }
+    }
+    if (inss === 0) { const ultima = regrasCirurgicas.tabelaINSS[regrasCirurgicas.tabelaINSS.length - 1]; inss = (baseTemp * ultima.aliquota) - ultima.deduzir; }
+
+    const baseIRRF = baseINSS - inss;
+    let irrf = 0;
+    if (totalBruto > 5000) { 
+        const deducoesDependentes = dependentes * regrasCirurgicas.deducaoPorDependenteIRRF;
+        const baseFinal = Math.max(0, baseIRRF - deducoesDependentes);
+        for (const faixa of regrasCirurgicas.tabelaIRRF) {
+            if (faixa.ate === "acima" || baseFinal <= faixa.ate) { irrf = (baseFinal * faixa.aliquota) - faixa.deduzir; break; }
+        }
+        if (totalBruto > 5000 && totalBruto <= 7350) {
+            const redutor = 978.62 - (0.133145 * totalBruto);
+            if (redutor > 0) irrf -= redutor;
+        }
+        irrf = Math.max(0, irrf);
+    }
+
+    const descontoPlano = regrasCirurgicas.planosSESI[plano] || 0;
+    const descontoSindicato = sindicato === 'sim' ? regrasCirurgicas.valorSindicato : 0;
+    
+    const totalDescontos = descontoFaltas + descontoAtrasos + descontoPlano + coparticipacao + descontoSindicato + emprestimo + inss + irrf + descontoVA + adiantamento + descontoVT;
+    const liquido = totalBruto - totalDescontos;
+
+    document.getElementById('inputSalarioLiquido').value = liquido.toFixed(2);
+    document.getElementById('viewAdiantamento').value = `R$ ${adiantamento.toFixed(2)}`;
+    
+    window.mudarAbaModular('fechamento');
+    window.mostrarToast(`Cálculo injetado: R$ ${liquido.toFixed(2)}`);
+};
+
+// Listeners Base
 onAuthStateChanged(auth, (user) => {
     if (user) { document.getElementById('tela-login').classList.add('hidden'); document.getElementById('tela-hub').classList.remove('hidden'); if (window.carregarTodosOsDados) window.carregarTodosOsDados(); } 
     else { document.getElementById('tela-login').classList.remove('hidden'); document.getElementById('tela-hub').classList.add('hidden'); document.getElementById('app').classList.add('hidden'); }
@@ -622,5 +757,12 @@ window.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('dataServico')) document.getElementById('dataServico').value = `${ano}-${mes}-${dia}`;
     if (document.getElementById('dataExtra')) document.getElementById('dataExtra').value = `${ano}-${mes}-${dia}`;
     if (document.getElementById('mesModular')) document.getElementById('mesModular').value = `${ano}-${mes}`;
+    
     ['valorBase', 'tipoCarga', 'tipoDia'].forEach(id => { document.getElementById(id)?.addEventListener('input', window.atualizarPreview); });
+    
+    // Listeners da Calculadora
+    const mesRefCalc = document.getElementById('calc-mes-ref');
+    const feriadosExtrasCalc = document.getElementById('calc-feriados-extras');
+    if (mesRefCalc) mesRefCalc.addEventListener('change', window.atualizarCalendarioCirurgico);
+    if (feriadosExtrasCalc) feriadosExtrasCalc.addEventListener('blur', window.atualizarCalendarioCirurgico);
 });
