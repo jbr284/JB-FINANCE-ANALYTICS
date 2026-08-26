@@ -55,7 +55,7 @@
     
     <div class="app-header">
         <button class="btn-nav-top" onclick="window.voltarAoHub()">⬅ Voltar</button>
-        <div id="app-title" class="app-title">JB Finance Analytics V6.4</div>
+        <div id="app-title" class="app-title">JB Finance Analytics V6.5</div>
         <button id="btn-privacidade" class="btn-nav-top" onclick="window.togglePrivacidade()"></button>
     </div>
 
@@ -138,6 +138,7 @@
                 <div id="lista-modular-container"></div>
             </div>
 
+            <!-- SIMULADOR CIRÚRGICO -->
             <div id="painel-mod-simulador" class="panel" style="padding: 15px; background: #f0f2f5;">
                 <div class="form-box">
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border: 1px solid #90caf9; margin-bottom: 15px;">
@@ -153,7 +154,6 @@
                         </div>
                     </div>
 
-                    <!-- CAMPOS DE HORAS CONVERTIDOS PARA TYPE="TEXT" COM A CLASSE "input-horas" -->
                     <h4 style="font-size: 12px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px;">PROVENTOS (Horas Extras e Adicionais)</h4>
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom:10px;">
                         <div><label>HE 50% (h):</label><input type="text" id="calc-he50" class="input-horas" placeholder="Ex: 6:15"></div>
@@ -183,7 +183,11 @@
                     </div>
                     
                     <button class="btn-action" style="background:#e65100; font-size: 13px; padding: 12px; margin-bottom: 20px;" onclick="window.memorizarPadroesCalculadora()">💾 Memorizar Padrões de Desconto</button>
-                    <button class="btn-action btn-green" style="font-size: 15px; padding: 18px;" onclick="window.calcularEInjetarModularCirurgico()">⚙️ Calcular e Preencher Fechamento</button>
+                    <button class="btn-action btn-green" style="font-size: 15px; padding: 18px;" onclick="window.calcularEInjetarModularCirurgico()">⚙️ Calcular Folha e Gerar Espelho</button>
+
+                    <!-- CAIXA ONDE VAI NASCER A TABELA DE AUDITORIA -->
+                    <div id="tabela-auditoria" style="display: none; margin-top: 20px;"></div>
+
                 </div>
             </div>
             
@@ -242,7 +246,9 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script type="module" src="app.js?v=6.4"></script>
+  
+  <!-- QUEBRADOR DE CACHE V6.5 -->
+  <script type="module" src="app.js?v=6.5"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
