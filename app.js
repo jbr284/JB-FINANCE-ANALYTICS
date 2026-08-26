@@ -39,10 +39,8 @@ window.atualizarCalendarioCalculadora = () => {
     const extrasStr = document.getElementById('calc-feriados-extras').value;
     const extrasArray = extrasStr ? extrasStr.split(',').map(d => d.trim()) : [];
 
-    // O Motor faz o cálculo
     const calendario = calcularCalendario(ano, mes, extrasArray);
 
-    // Preenche a tela bloqueada
     document.getElementById('calc-diasuteis').value = calendario.diasUteis;
     document.getElementById('calc-domferiados').value = calendario.domFeriados;
     document.getElementById('calc-dias').value = calendario.diasNoMes;
@@ -56,7 +54,7 @@ window.calcularEInjetarModularCirurgico = () => {
     const domFeriados = parseFloat(document.getElementById('calc-domferiados').value) || 0;
 
     if (diasUteis === 0 && domFeriados === 0) {
-        return alert("Selecione o Mês da Folha no calendário para gerar os Dias Úteis e Feriados!");
+        return alert("Selecione o Mês da Folha no calendário da Calculadora para gerar os Dias Úteis e Feriados!");
     }
 
     const inputs = {
@@ -86,7 +84,6 @@ window.calcularEInjetarModularCirurgico = () => {
     document.getElementById('inputSalarioLiquido').value = resultado.liquido.toFixed(2);
     document.getElementById('viewAdiantamento').value = `R$ ${resultado.adiantamento.toFixed(2)}`;
     
-    // Fecha a sanfona
     document.getElementById('conteudo-sanfona-calculadora').style.display = 'none';
 
     window.mostrarToast(`Cálculo de R$ ${resultado.liquido.toFixed(2)} injetado com precisão!`);
@@ -213,7 +210,93 @@ window.renderizarHistoricoModular = () => {
 };
 
 // ==========================================
-// OUTROS MÓDULOS (Saripan, Extras, Geral)
+// RENDERIZAÇÃO DA VISÃO GERAL (DASHBOARD)
+// ==========================================
+window.renderizarDashboardGeral = () => {
+    const container = document.getElementById('dashboard-geral-content');
+    if(!container) return;
+    
+    const dadosGerais = {}; 
+    let anosEncontrados = new Set();
+    
+    const initData = (ano, mes) => {
+        const k = `${ano}-${mes}`; 
+        anosEncontrados.add(ano);
+        if(!dadosGerais[k]) dadosGerais[k] = { ano: ano, mes: mes, saripan: 0, modularRem: 0, modularBen: 0, extra: 0 };
+        return k;
+    };
+
+    window.registros.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].saripan += parseFloat(r.total) || 0; });
+    window.registrosModular.forEach(r => { 
+        const k = initData(r.ano, r.mes); 
+        const rem = parseFloat(r.totalRemunerativo) || parseFloat(r.total) || 0;
+        const ben = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225;
+        dadosGerais[k].modularRem += rem; dadosGerais[k].modularBen += ben; 
+    });
+    window.registrosExtra.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].extra += parseFloat(r.total) || 0; });
+
+    const anosOrdenados = Array.from(anosEncontrados).sort((a,b) => b-a);
+    if(anosOrdenados.length === 0) { container.innerHTML = "<p style='text-align:center;'>Sem dados.</p>"; return; }
+    
+    let htmlFinal = '';
+    
+    anosOrdenados.forEach(ano => {
+        const mesesDoAno = Object.values(dadosGerais).filter(d => d.ano === ano).sort((a,b) => a.mes - b.mes);
+        let totalAcumuladoAno = 0; 
+        const labels = [], dataSari = [], dataModRem = [], dataBen = [], dataExtra = [];
+        let htmlTabelaCorpo = '';
+
+        mesesDoAno.forEach(m => {
+            labels.push(MESES[m.mes].substring(0,3)); 
+            dataSari.push(m.saripan); dataModRem.push(m.modularRem); dataBen.push(m.modularBen); dataExtra.push(m.extra);
+            const totalMes = m.saripan + m.modularRem + m.modularBen + m.extra;
+            totalAcumuladoAno += totalMes;
+            htmlTabelaCorpo += `
+                <tr>
+                    <td style="padding: 8px; font-weight: bold; color: #455a64; text-align: left;">${MESES[m.mes]}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.modularRem.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.modularBen.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.saripan.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.extra.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 8px; text-align: right; background: #e8f5e9; font-weight: bold; color: #1b5e20;">R$ ${totalMes.toFixed(2)}</td>
+                </tr>`;
+        });
+        
+        const media = mesesDoAno.length > 0 ? (totalAcumuladoAno / mesesDoAno.length) : 0;
+        
+        htmlFinal += `<div style="margin-bottom: 35px;">
+            <h4 style="color: #f57c00; border-bottom: 2px solid #ffe0b2; padding-bottom: 5px;">ANÁLISE FINANCEIRA ${ano}</h4>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div class="year-summary" style="flex: 1; padding: 10px; border-color: #ffcc80;"><h4>RENDIMENTO TOTAL</h4><div class="year-total-value esconder-valor" style="font-size: 15px; margin-top: 10px; color: #e65100;">${totalAcumuladoAno.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div></div>
+                <div class="year-summary" style="flex: 1; padding: 10px; background: #e3f2fd; border-color: #90caf9;"><h4>MÉDIA MENSAL</h4><div class="year-total-value esconder-valor" style="font-size: 15px; color: #0d47a1; margin-top: 10px;">${media.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div></div>
+            </div>
+            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;"><div style="position: relative; height: 250px; width: 100%;"><canvas id="grafico-geral-${ano}" class="esconder-valor"></canvas></div></div>
+            <div style="overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #cfd8dc;">
+                <table style="width: 100%; min-width: 550px; font-size: 11px; border-collapse: collapse;">
+                    <thead><tr style="background: #e3f2fd; border-bottom: 2px solid #90caf9; text-align: right;"><th style="padding: 10px 8px; text-align: left;">Mês</th><th style="padding: 10px 8px;">Mod. Rem.</th><th style="padding: 10px 8px;">Benefícios</th><th style="padding: 10px 8px;">Saripan</th><th style="padding: 10px 8px;">Extras</th><th style="padding: 10px 8px; background: #c8e6c9; color: #1b5e20;">Total do Mês</th></tr></thead>
+                    <tbody>${htmlTabelaCorpo}</tbody>
+                </table>
+            </div>
+        </div>`;
+
+        setTimeout(() => {
+            const ctx = document.getElementById(`grafico-geral-${ano}`);
+            if(ctx) {
+                const chart = new Chart(ctx, { 
+                    type: 'bar', data: { labels: labels, datasets: [ 
+                        { label: 'Mod (Líquido+Adiant)', data: dataModRem, backgroundColor: '#1565c0' }, { label: 'Mod (Benefícios)', data: dataBen, backgroundColor: '#4dd0e1' }, 
+                        { label: 'Saripan', data: dataSari, backgroundColor: '#43a047' }, { label: 'Extras', data: dataExtra, backgroundColor: '#fbc02d' }
+                    ]}, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } } 
+                });
+                if (!window.chartsAtivos) window.chartsAtivos = []; window.chartsAtivos.push(chart);
+            }
+        }, 100);
+    });
+    container.innerHTML = htmlFinal;
+};
+
+// ==========================================
+// OUTROS MÓDULOS (Saripan, Extras)
 // ==========================================
 window.adicionarRegistro = async () => {
     const dataInput = document.getElementById('dataServico').value;
@@ -393,89 +476,6 @@ window.renderizarFinanceiroSaripan = () => {
     container.innerHTML = htmlFinal;
 };
 
-window.renderizarDashboardGeral = () => {
-    const container = document.getElementById('dashboard-geral-content');
-    if(!container) return;
-    
-    const dadosGerais = {}; 
-    let anosEncontrados = new Set();
-    
-    const initData = (ano, mes) => {
-        const k = `${ano}-${mes}`; 
-        anosEncontrados.add(ano);
-        if(!dadosGerais[k]) dadosGerais[k] = { ano: ano, mes: mes, saripan: 0, modularRem: 0, modularBen: 0, extra: 0 };
-        return k;
-    };
-
-    window.registros.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].saripan += parseFloat(r.total) || 0; });
-    window.registrosModular.forEach(r => { 
-        const k = initData(r.ano, r.mes); 
-        const rem = parseFloat(r.totalRemunerativo) || parseFloat(r.total) || 0;
-        const ben = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225;
-        dadosGerais[k].modularRem += rem; dadosGerais[k].modularBen += ben; 
-    });
-    window.registrosExtra.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].extra += parseFloat(r.total) || 0; });
-
-    const anosOrdenados = Array.from(anosEncontrados).sort((a,b) => b-a);
-    if(anosOrdenados.length === 0) { container.innerHTML = "<p style='text-align:center;'>Sem dados.</p>"; return; }
-    
-    let htmlFinal = '';
-    
-    anosOrdenados.forEach(ano => {
-        const mesesDoAno = Object.values(dadosGerais).filter(d => d.ano === ano).sort((a,b) => a.mes - b.mes);
-        let totalAcumuladoAno = 0; 
-        const labels = [], dataSari = [], dataModRem = [], dataBen = [], dataExtra = [];
-        let htmlTabelaCorpo = '';
-
-        mesesDoAno.forEach(m => {
-            labels.push(MESES[m.mes].substring(0,3)); 
-            dataSari.push(m.saripan); dataModRem.push(m.modularRem); dataBen.push(m.modularBen); dataExtra.push(m.extra);
-            const totalMes = m.saripan + m.modularRem + m.modularBen + m.extra;
-            totalAcumuladoAno += totalMes;
-            htmlTabelaCorpo += `
-                <tr>
-                    <td style="padding: 8px; font-weight: bold; color: #455a64; text-align: left;">${MESES[m.mes]}</td>
-                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.modularRem.toFixed(2)}</td>
-                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.modularBen.toFixed(2)}</td>
-                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.saripan.toFixed(2)}</td>
-                    <td class="esconder-valor" style="padding: 8px; text-align: right;">R$ ${m.extra.toFixed(2)}</td>
-                    <td class="esconder-valor" style="padding: 8px; text-align: right; background: #e8f5e9; font-weight: bold; color: #1b5e20;">R$ ${totalMes.toFixed(2)}</td>
-                </tr>`;
-        });
-        
-        const media = mesesDoAno.length > 0 ? (totalAcumuladoAno / mesesDoAno.length) : 0;
-        
-        htmlFinal += `<div style="margin-bottom: 35px;">
-            <h4 style="color: #f57c00; border-bottom: 2px solid #ffe0b2; padding-bottom: 5px;">ANÁLISE FINANCEIRA ${ano}</h4>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <div class="year-summary" style="flex: 1; padding: 10px; border-color: #ffcc80;"><h4>RENDIMENTO TOTAL</h4><div class="year-total-value esconder-valor" style="font-size: 15px; margin-top: 10px; color: #e65100;">${totalAcumuladoAno.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div></div>
-                <div class="year-summary" style="flex: 1; padding: 10px; background: #e3f2fd; border-color: #90caf9;"><h4>MÉDIA MENSAL</h4><div class="year-total-value esconder-valor" style="font-size: 15px; color: #0d47a1; margin-top: 10px;">${media.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div></div>
-            </div>
-            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;"><div style="position: relative; height: 250px; width: 100%;"><canvas id="grafico-geral-${ano}" class="esconder-valor"></canvas></div></div>
-            <div style="overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #cfd8dc;">
-                <table style="width: 100%; min-width: 550px; font-size: 11px; border-collapse: collapse;">
-                    <thead><tr style="background: #e3f2fd; border-bottom: 2px solid #90caf9; text-align: right;"><th style="padding: 10px 8px; text-align: left;">Mês</th><th style="padding: 10px 8px;">Mod. Rem.</th><th style="padding: 10px 8px;">Benefícios</th><th style="padding: 10px 8px;">Saripan</th><th style="padding: 10px 8px;">Extras</th><th style="padding: 10px 8px; background: #c8e6c9; color: #1b5e20;">Total do Mês</th></tr></thead>
-                    <tbody>${htmlTabelaCorpo}</tbody>
-                </table>
-            </div>
-        </div>`;
-
-        setTimeout(() => {
-            const ctx = document.getElementById(`grafico-geral-${ano}`);
-            if(ctx) {
-                const chart = new Chart(ctx, { 
-                    type: 'bar', data: { labels: labels, datasets: [ 
-                        { label: 'Mod (Líquido+Adiant)', data: dataModRem, backgroundColor: '#1565c0' }, { label: 'Mod (Benefícios)', data: dataBen, backgroundColor: '#4dd0e1' }, 
-                        { label: 'Saripan', data: dataSari, backgroundColor: '#43a047' }, { label: 'Extras', data: dataExtra, backgroundColor: '#fbc02d' }
-                    ]}, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } } 
-                });
-                if (!window.chartsAtivos) window.chartsAtivos = []; window.chartsAtivos.push(chart);
-            }
-        }, 100);
-    });
-    container.innerHTML = htmlFinal;
-};
-
 window.adicionarRegistroExtra = async () => {
     const d = document.getElementById('dataExtra').value;
     const desc = document.getElementById('descExtra').value.trim() || 'Renda Extra';
@@ -569,7 +569,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     ['valorBase', 'tipoCarga', 'tipoDia'].forEach(id => { document.getElementById(id)?.addEventListener('input', window.atualizarPreview); });
     
-    // Liga a automação da Calculadora Cirúrgica ao Calendário
+    // Automação da Calculadora Cirúrgica e Calendário
     document.getElementById('calc-mes-ref')?.addEventListener('change', window.atualizarCalendarioCalculadora);
     document.getElementById('calc-feriados-extras')?.addEventListener('blur', window.atualizarCalendarioCalculadora);
 });
