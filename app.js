@@ -597,7 +597,7 @@ window.abrirModulo = (modulo) => {
     if (modEl) modEl.classList.add('active');
     
     const titulos = { 'saripan': 'Módulo SARIPAN', 'modular': 'Módulo MODULAR', 'geral': 'Visão Geral (Evolução)' };
-    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.3';
+    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.4';
     
     if (modulo === 'geral' && window.renderizarDashboardGeral) window.renderizarDashboardGeral();
     if (modulo === 'modular') { 
@@ -629,6 +629,20 @@ const regrasCirurgicas = {
     tabelaINSS: [ { ate: 1621.00, aliquota: 0.075, deduzir: 0 }, { ate: 2902.84, aliquota: 0.09, deduzir: 24.32 }, { ate: 4354.27, aliquota: 0.12, deduzir: 111.40 }, { ate: 8475.55, aliquota: 0.14, deduzir: 198.49 } ],
     tabelaIRRF: [ { ate: 2428.80, aliquota: 0, deduzir: 0 }, { ate: 2826.65, aliquota: 0.075, deduzir: 182.16 }, { ate: 3751.05, aliquota: 0.15, deduzir: 394.16 }, { ate: 4664.68, aliquota: 0.225, deduzir: 675.49 }, { ate: "acima", aliquota: 0.275, deduzir: 908.73 } ],
     planosSESI: { nenhum: 0, basico_individual: 29, basico_familiar: 58, plus_individual: 120, plus_familiar: 189 }
+};
+
+// === NOVA LÓGICA: CONVERTER HORAS (6:15 ou 6h15 -> 6.25) ===
+window.converterParaDecimal = (valor) => {
+    if (!valor) return '';
+    valor = valor.toString().toLowerCase().trim().replace(',', '.');
+    if (valor.includes('h') || valor.includes(':')) {
+        const partes = valor.split(/[h:]/);
+        const horas = parseFloat(partes[0]) || 0;
+        const minutos = parseFloat(partes[1]) || 0;
+        return (horas + (minutos / 60)).toFixed(2);
+    }
+    const num = parseFloat(valor);
+    return isNaN(num) ? '' : num.toFixed(2);
 };
 
 window.atualizarCalendarioCirurgico = () => {
@@ -671,7 +685,6 @@ window.atualizarCalendarioCirurgico = () => {
     document.getElementById('calc-dias').value = diasNoMes;
 };
 
-// === NOVA FUNÇÃO: MEMORIZAR PADRÕES ===
 window.memorizarPadroesCalculadora = async () => {
     const padroes = {
         plano: document.getElementById('calc-plano').value,
@@ -699,6 +712,8 @@ window.calcularEInjetarModularCirurgico = () => {
     const diasTrab = parseFloat(document.getElementById('calc-dias').value) || 30;
     const dependentes = parseFloat(document.getElementById('calc-dependentes').value) || 0;
     const faltas = parseFloat(document.getElementById('calc-faltas').value) || 0;
+    
+    // Agora o sistema garante que lê como número (graças ao conversor e parseFloat)
     const atrasos = parseFloat(document.getElementById('calc-atrasos').value) || 0;
     const he50 = parseFloat(document.getElementById('calc-he50').value) || 0;
     const he60 = parseFloat(document.getElementById('calc-he60').value) || 0;
@@ -768,7 +783,6 @@ window.calcularEInjetarModularCirurgico = () => {
     document.getElementById('inputSalarioLiquido').value = liquido.toFixed(2);
     document.getElementById('viewAdiantamento').value = `R$ ${adiantamento.toFixed(2)}`;
     
-    // Volta para a aba de fechamento e preenche o mês automaticamente
     document.getElementById('mesModular').value = document.getElementById('calc-mes-ref').value;
     window.mudarAbaModular('fechamento');
     window.mostrarToast(`Cálculo injetado: R$ ${liquido.toFixed(2)}`);
@@ -791,9 +805,15 @@ window.addEventListener('DOMContentLoaded', () => {
     
     ['valorBase', 'tipoCarga', 'tipoDia'].forEach(id => { document.getElementById(id)?.addEventListener('input', window.atualizarPreview); });
     
-    // Listeners da Calculadora
     const mesRefCalc = document.getElementById('calc-mes-ref');
     const feriadosExtrasCalc = document.getElementById('calc-feriados-extras');
     if (mesRefCalc) mesRefCalc.addEventListener('change', window.atualizarCalendarioCirurgico);
     if (feriadosExtrasCalc) feriadosExtrasCalc.addEventListener('blur', window.atualizarCalendarioCirurgico);
+    
+    // EVENTO DE CONVERSÃO DE HORAS (Ouve quando você sai do campo)
+    document.querySelectorAll('.input-horas').forEach(input => {
+        input.addEventListener('blur', function() {
+            this.value = window.converterParaDecimal(this.value);
+        });
+    });
 });
