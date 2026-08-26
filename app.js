@@ -45,6 +45,19 @@ window.carregarTodosOsDados = async () => {
                 const inputBase = document.getElementById('configSalarioBase');
                 if (inputBase) inputBase.value = base;
             }
+            
+            // CARREGA OS PADRÕES MEMORIZADOS DA CALCULADORA
+            const padroesSnap = await getDoc(doc(db, "configuracoes", "modular_padroes"));
+            if (padroesSnap.exists()) {
+                const p = padroesSnap.data();
+                if(document.getElementById('calc-plano')) document.getElementById('calc-plano').value = p.plano || 'nenhum';
+                if(document.getElementById('calc-copart')) document.getElementById('calc-copart').value = p.copart || '';
+                if(document.getElementById('calc-emprestimo')) document.getElementById('calc-emprestimo').value = p.emprestimo || '';
+                if(document.getElementById('calc-sindicato')) document.getElementById('calc-sindicato').value = p.sindicato || 'nao';
+                if(document.getElementById('calc-vt')) document.getElementById('calc-vt').value = p.vt || 'sim';
+                if(document.getElementById('calc-dependentes')) document.getElementById('calc-dependentes').value = p.dependentes || '';
+            }
+            
         } catch (e) { console.log(e); }
 
         await verificarEGerarAdiantamentoAutomatico();
@@ -584,7 +597,7 @@ window.abrirModulo = (modulo) => {
     if (modEl) modEl.classList.add('active');
     
     const titulos = { 'saripan': 'Módulo SARIPAN', 'modular': 'Módulo MODULAR', 'geral': 'Visão Geral (Evolução)' };
-    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.1';
+    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.3';
     
     if (modulo === 'geral' && window.renderizarDashboardGeral) window.renderizarDashboardGeral();
     if (modulo === 'modular') { 
@@ -658,9 +671,25 @@ window.atualizarCalendarioCirurgico = () => {
     document.getElementById('calc-dias').value = diasNoMes;
 };
 
+// === NOVA FUNÇÃO: MEMORIZAR PADRÕES ===
+window.memorizarPadroesCalculadora = async () => {
+    const padroes = {
+        plano: document.getElementById('calc-plano').value,
+        copart: document.getElementById('calc-copart').value,
+        emprestimo: document.getElementById('calc-emprestimo').value,
+        sindicato: document.getElementById('calc-sindicato').value,
+        vt: document.getElementById('calc-vt').value,
+        dependentes: document.getElementById('calc-dependentes').value
+    };
+    try {
+        await setDoc(doc(db, "configuracoes", "modular_padroes"), padroes);
+        window.mostrarToast("Descontos padrão memorizados!");
+    } catch(e) { console.error("Erro ao salvar padrões: ", e); }
+};
+
 window.calcularEInjetarModularCirurgico = () => {
     const salarioBase = parseFloat(localStorage.getItem('modular_salario_base')) || 0;
-    if (salarioBase <= 0) return alert("Configure e Salve o Salário Base Contratual primeiro!");
+    if (salarioBase <= 0) return alert("Configure e Salve o Salário Base Contratual na aba Fechamento primeiro!");
 
     const diasUteis = parseFloat(document.getElementById('calc-diasuteis').value) || 0;
     const domFeriados = parseFloat(document.getElementById('calc-domferiados').value) || 0;
@@ -739,6 +768,8 @@ window.calcularEInjetarModularCirurgico = () => {
     document.getElementById('inputSalarioLiquido').value = liquido.toFixed(2);
     document.getElementById('viewAdiantamento').value = `R$ ${adiantamento.toFixed(2)}`;
     
+    // Volta para a aba de fechamento e preenche o mês automaticamente
+    document.getElementById('mesModular').value = document.getElementById('calc-mes-ref').value;
     window.mudarAbaModular('fechamento');
     window.mostrarToast(`Cálculo injetado: R$ ${liquido.toFixed(2)}`);
 };
