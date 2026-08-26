@@ -55,7 +55,7 @@
     
     <div class="app-header">
         <button class="btn-nav-top" onclick="voltarAoHub()">⬅ Voltar</button>
-        <div id="app-title" class="app-title">JB Finance Analytics V6.1</div>
+        <div id="app-title" class="app-title">JB Finance Analytics V6.2</div>
         <button id="btn-privacidade" class="btn-nav-top" onclick="togglePrivacidade()"></button>
     </div>
 
@@ -98,10 +98,9 @@
         </div>
     </div>
 
-    <!-- MÓDULO: MODULAR (Agora com Sistema de Abas) -->
+    <!-- MÓDULO: MODULAR -->
     <div id="module-modular" class="master-module">
         
-        <!-- ÁREA FIXA: ABAS DO MODULAR -->
         <div class="fixed-area">
             <div class="tabs-container">
               <button id="btn-tab-mod-fechamento" class="tab-btn active" onclick="mudarAbaModular('fechamento')">📋 Fechamento</button>
@@ -111,9 +110,7 @@
         
         <div class="scroll-content">
             
-            <!-- ABA 1: FECHAMENTO (Seu sistema atual intacto) -->
             <div id="painel-mod-fechamento" class="panel active" style="padding: 15px; background: #f0f2f5;">
-                
                 <div class="form-box" style="margin-bottom: 15px; border-color: #90caf9; background: #e3f2fd; padding: 15px;">
                     <h4 style="color: #0d47a1; margin-bottom: 10px; font-size: 14px;">⚙️ Salário Base Contratual</h4>
                     <div style="display: flex; gap: 10px; align-items: flex-end;">
@@ -141,7 +138,6 @@
                 <div id="lista-modular-container"></div>
             </div>
 
-            <!-- ABA 2: SIMULADOR CIRÚRGICO -->
             <div id="painel-mod-simulador" class="panel" style="padding: 15px; background: #f0f2f5;">
                 <div class="form-box">
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border: 1px solid #90caf9; margin-bottom: 15px;">
@@ -185,7 +181,9 @@
                         <div><label>Dependentes:</label><input type="number" id="calc-dependentes" placeholder="0"></div>
                     </div>
                     
-                    <button class="btn-action" style="background:#1565c0; font-size: 14px; padding: 15px;" onclick="calcularEInjetarModularCirurgico()">⚙️ Calcular e Preencher Fechamento</button>
+                    <button class="btn-action" style="background:#e65100; font-size: 13px; padding: 12px; margin-bottom: 20px;" onclick="memorizarPadroesCalculadora()">💾 Memorizar Padrões de Desconto</button>
+                    
+                    <button class="btn-action btn-green" style="font-size: 15px; padding: 18px;" onclick="calcularEInjetarModularCirurgico()">⚙️ Calcular e Preencher Fechamento</button>
                 </div>
             </div>
             
@@ -249,9 +247,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(registration => { console.log('ServiceWorker registrado:', registration.scope); })
-          .catch(error => { console.error('ServiceWorker erro:', error); });
+        navigator.serviceWorker.register('./sw.js').then(registration => { console.log('SW ok'); }).catch(error => { console.log('SW erro'); });
       });
     }
   </script>
