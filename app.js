@@ -46,7 +46,6 @@ window.carregarTodosOsDados = async () => {
                 if (inputBase) inputBase.value = base;
             }
             
-            // CARREGA OS PADRÕES DA CALCULADORA
             const padroesSnap = await getDoc(doc(db, "configuracoes", "modular_padroes"));
             if (padroesSnap.exists()) {
                 const p = padroesSnap.data();
@@ -140,7 +139,6 @@ window.salvarMesModular = async () => {
     const mesStr = document.getElementById('mesModular').value;
     if (!mesStr) return alert("Selecione o mês de referência.");
 
-    // REGRA DE BLOQUEIO DO DIA 30
     const [anoStr, mesStrNum] = mesStr.split('-');
     const ano = parseInt(anoStr);
     const mes = parseInt(mesStrNum) - 1;
@@ -162,7 +160,11 @@ window.salvarMesModular = async () => {
     if (salarioBase <= 0) return alert("Configure o Salário Base primeiro!");
 
     const idUnico = `MOD-${ano}-${mes + 1}`;
-    const adiantamento = salarioBase * 0.40;
+    
+    // Pega o valor exato do adiantamento gerado pela calculadora no DOM
+    const adiantamentoStr = document.getElementById('viewAdiantamento').value.replace('R$', '').trim();
+    const adiantamento = parseFloat(adiantamentoStr) || (salarioBase * 0.40);
+    
     const salarioLiq = parseFloat(document.getElementById('inputSalarioLiquido').value) || 0;
     const extras = parseFloat(document.getElementById('inputExtras').value) || 0;
     const descExtras = document.getElementById('descExtras').value || '';
@@ -611,7 +613,7 @@ window.abrirModulo = (modulo) => {
     if (modEl) modEl.classList.add('active');
     
     const titulos = { 'saripan': 'Módulo SARIPAN', 'modular': 'Módulo MODULAR', 'geral': 'Visão Geral (Evolução)' };
-    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.6';
+    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.7';
     
     if (modulo === 'geral' && window.renderizarDashboardGeral) window.renderizarDashboardGeral();
     if (modulo === 'modular') { 
@@ -635,7 +637,7 @@ window.fazerLogin = async () => {
 window.sairApp = async () => { if (confirm("Deseja sair?")) await signOut(auth); };
 
 // ==========================================
-// MOTOR DA CALCULADORA CIRÚRGICA
+// MOTOR DA CALCULADORA CIRÚRGICA E FÉRIAS
 // ==========================================
 const regrasCirurgicas = {
     tetoINSS: 8475.55, percentualAdiantamento: 0.4, percentualAdicionalNoturno: 0.35,
@@ -656,6 +658,66 @@ window.converterParaDecimal = (valor) => {
     }
     const num = parseFloat(valor);
     return isNaN(num) ? '' : num.toFixed(2);
+};
+
+// === NOVA LÓGICA DE FÉRIAS RESTAURADA ===
+window.alternarModoFerias = () => {
+    const modo = document.getElementById('calc-tipo-mes').value;
+    const box = document.getElementById('box-ferias');
+    const colQtd = document.getElementById('col-qtd-ferias');
+    const lblData = document.getElementById('lbl-data-ferias');
+    const diasTrabInput = document.getElementById('calc-dias-trab');
+
+    if (modo === 'completo') {
+        box.classList.add('hidden');
+        diasTrabInput.value = 30;
+    } else {
+        box.classList.remove('hidden');
+        if (modo === 'retorno_ferias') {
+            colQtd.classList.add('hidden');
+            lblData.textContent = "Dia do Retorno:";
+        } else {
+            colQtd.classList.remove('hidden');
+            lblData.textContent = "Dia de Saída:";
+        }
+        window.calcularDiasProporcionaisFerias();
+    }
+};
+
+window.calcularDiasProporcionaisFerias = () => {
+    const mesRefStr = document.getElementById('calc-mes-ref').value;
+    const modo = document.getElementById('calc-tipo-mes').value;
+    const diaSelecionado = parseInt(document.getElementById('calc-dia-ferias').value);
+    const diasTrabInput = document.getElementById('calc-dias-trab');
+
+    if (modo === 'completo') { diasTrabInput.value = 30; return; }
+    if (!mesRefStr || isNaN(diaSelecionado)) { diasTrabInput.value = 0; return; }
+
+    const [anoRef, mesRef] = mesRefStr.split('-').map(Number);
+    const fimMes = new Date(anoRef, mesRef, 0);
+    const diaValidado = Math.min(diaSelecionado, fimMes.getDate());
+    let diasTrabalhados = 0;
+
+    if (modo === 'saida_ferias') {
+        const duracao = parseInt(document.getElementById('calc-qtd-ferias').value);
+        if(isNaN(duracao)) { diasTrabInput.value = 0; return; }
+
+        const dataInicioFerias = new Date(anoRef, mesRef - 1, diaValidado);
+        const dataFimFerias = new Date(dataInicioFerias);
+        dataFimFerias.setDate(dataFimFerias.getDate() + duracao - 1);
+        
+        if (dataFimFerias <= fimMes) {
+            const diasFeriasNoMes = Math.ceil((dataFimFerias - dataInicioFerias)/(1000*60*60*24)) + 1;
+            diasTrabalhados = 30 - diasFeriasNoMes;
+        } else {
+            diasTrabalhados = diaValidado - 1;
+        }
+    } else if (modo === 'retorno_ferias') {
+        const diasPerdidos = diaValidado - 1;
+        diasTrabalhados = 30 - diasPerdidos;
+    }
+
+    diasTrabInput.value = Math.max(0, Math.min(30, diasTrabalhados));
 };
 
 window.atualizarCalendarioCirurgico = () => {
@@ -696,6 +758,8 @@ window.atualizarCalendarioCirurgico = () => {
     document.getElementById('calc-diasuteis').value = diasUteis;
     document.getElementById('calc-domferiados').value = domFeriados;
     document.getElementById('calc-dias').value = diasNoMes;
+    
+    window.calcularDiasProporcionaisFerias(); // Recalcula se mudar o mês
 };
 
 window.memorizarPadroesCalculadora = async () => {
@@ -722,10 +786,8 @@ window.calcularEInjetarModularCirurgico = () => {
 
     if (diasUteis === 0 && domFeriados === 0) return alert("Selecione o Mês da Folha no calendário para gerar os Dias Úteis e Feriados!");
 
-    // ==========================================
-    // CORREÇÃO: O Salário de Mensalista é sempre 30 dias na base
-    // ==========================================
-    const diasTrabMensalista = 30; 
+    // O sistema agora lê os dias proporcionais trabalhados baseados nas férias
+    const diasTrab = parseFloat(document.getElementById('calc-dias-trab').value) || 30; 
     
     const dependentes = parseFloat(document.getElementById('calc-dependentes').value) || 0;
     const faltas = parseFloat(document.getElementById('calc-faltas').value) || 0;
@@ -747,8 +809,8 @@ window.calcularEInjetarModularCirurgico = () => {
     const valorDia = salarioBase / 30;
     const valorHora = salarioBase / 220;
 
-    // A base do mensalista não muda com os dias do mês
-    const vencBase = salarioBase; 
+    // Se o mês estiver quebrado por férias, o salário base é proporcional. Se for 30 dias, é integral.
+    const vencBase = (salarioBase / 30) * diasTrab; 
     
     const valorHE50 = he50 * valorHora * 1.5;
     const valorHE60 = he60 * valorHora * 1.6;
@@ -765,8 +827,8 @@ window.calcularEInjetarModularCirurgico = () => {
 
     const descontoFaltas = faltas * valorDia;
     const descontoAtrasos = atrasos * valorHora;
-    // O Adiantamento do mensalista é fixo com base no salário, não flutua com dias do mês
-    const adiantamento = salarioBase * regrasCirurgicas.percentualAdiantamento;
+    // Adiantamento proporcional aos dias trabalhados na folha, conforme a sua lógica antiga
+    const adiantamento = (salarioBase / 30) * diasTrab * regrasCirurgicas.percentualAdiantamento;
     const descontoVA = regrasCirurgicas.descontoFixoVA;
     const descontoVT = descontarVT ? (salarioBase * regrasCirurgicas.percentualVT) : 0;
     
@@ -802,7 +864,6 @@ window.calcularEInjetarModularCirurgico = () => {
     document.getElementById('inputSalarioLiquido').value = liquido.toFixed(2);
     document.getElementById('viewAdiantamento').value = `R$ ${adiantamento.toFixed(2)}`;
     
-    // GERA A TABELA DE AUDITORIA
     let htmlTable = `
         <div style="background: #fff; border: 1px solid #1565c0; border-radius: 8px; overflow: hidden; margin-top: 20px;">
             <h4 style="background: #1565c0; color: white; margin: 0; padding: 10px; text-align: center; font-size: 14px;">📑 Memória de Cálculo (Auditoria)</h4>
@@ -825,7 +886,7 @@ window.calcularEInjetarModularCirurgico = () => {
         </tr>`;
     };
 
-    if (vencBase > 0) addRow('Salário Base Contratual', '30 d', vencBase, null);
+    if (vencBase > 0) addRow('Salário Base Contratual', `${diasTrab} d`, vencBase, null);
     if (valorHE50 > 0) addRow('Horas Extras 50%', `${he50} h`, valorHE50, null);
     if (valorHE60 > 0) addRow('Horas Extras 60%', `${he60} h`, valorHE60, null);
     if (valorHE80 > 0) addRow('Horas Extras 80%', `${he80} h`, valorHE80, null);
@@ -900,4 +961,8 @@ window.addEventListener('DOMContentLoaded', () => {
             this.value = window.converterParaDecimal(this.value);
         });
     });
+
+    document.getElementById('calc-tipo-mes')?.addEventListener('change', window.alternarModoFerias);
+    document.getElementById('calc-dia-ferias')?.addEventListener('input', window.calcularDiasProporcionaisFerias);
+    document.getElementById('calc-qtd-ferias')?.addEventListener('input', window.calcularDiasProporcionaisFerias);
 });
