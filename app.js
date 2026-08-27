@@ -150,13 +150,11 @@ window.compartilharRelatorio = async (chaveGrupo) => {
     
     try {
         const printContainer = document.getElementById('print-container');
-        // Traz temporariamente para a tela (escondido atrás de tudo) para o Canvas conseguir desenhar
         printContainer.style.top = '0';
         printContainer.style.left = '0';
         
         const canvas = await html2canvas(document.getElementById('print-template'), { scale: 2, useCORS: true });
         
-        // Esconde de novo
         printContainer.style.top = '-9999px';
         printContainer.style.left = '-9999px';
 
@@ -175,7 +173,6 @@ window.compartilharRelatorio = async (chaveGrupo) => {
                     window.open(url, '_blank');
                 }
             } else {
-                // Download da imagem e abre WhatsApp
                 const link = document.createElement('a');
                 link.download = file.name;
                 link.href = URL.createObjectURL(blob);
@@ -280,7 +277,7 @@ window.salvarMesModular = async () => {
         window.registrosModular.push(novoReg);
         window.renderizarHistoricoModular();
         window.renderizarDashboardGeral();
-        window.mostrarToast("Fechamento mensal salvo com sucesso!");
+        window.mostrarToast("Mês registrado com sucesso!");
     } catch(e) { console.error(e); }
 };
 
@@ -421,7 +418,7 @@ window.renderizarDashboardGeral = () => {
 };
 
 // ==========================================
-// MÓDULO EXTRA E SARIPAN (COM BOTÃO WHATSAPP)
+// MÓDULO EXTRA E SARIPAN
 // ==========================================
 window.adicionarRegistroExtra = async () => {
     const d = document.getElementById('dataExtra').value;
@@ -581,7 +578,6 @@ window.renderizarApontamentosSaripan = () => {
             htmlRows += `<tr><td>${dataFmt}</td><td>${diaDaSemana}</td><td>${tipoStr}</td><td>${diaStr}</td><td class="td-valor esconder-valor">${totalItemFmt}</td><td class="td-acao"><span style="color:red; cursor:pointer;" onclick="window.excluirRegistro('${item.id}')">✖</span></td></tr>`;
         });
 
-        // BOTÃO OFICIAL DO WHATSAPP
         const btnWhatsApp = `<button class="btn-icon" style="background: none; border: none; cursor: pointer; padding: 5px; margin-right: 5px;" onclick="event.stopPropagation(); window.compartilharRelatorio('${chave}')" title="Compartilhar no WhatsApp">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="22" height="22" fill="#25D366"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-23.1-115-65-157zM223.9 438.3c-33.1 0-65.5-8.9-94-25.8l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 54.3 0 105.4 21.2 143.8 59.6 38.4 38.4 59.6 89.5 59.6 143.8 0 101.8-82.8 184.5-184.6 184.5zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
         </button>`;
@@ -709,8 +705,8 @@ window.abrirModulo = (modulo) => {
     const modEl = document.getElementById(`module-${modulo}`);
     if (modEl) modEl.classList.add('active');
     
-    const titulos = { 'saripan': 'Módulo SARIPAN', 'modular': 'Módulo MODULAR', 'geral': 'Visão Geral (Evolução)' };
-    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.8';
+    const titulos = { 'saripan': 'SARIPAN', 'modular': 'MODULAR', 'geral': 'INDICADORES' };
+    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.9';
     
     if (modulo === 'geral' && window.renderizarDashboardGeral) window.renderizarDashboardGeral();
     if (modulo === 'modular') { 
@@ -959,7 +955,7 @@ window.calcularEInjetarModularCirurgico = () => {
     
     let htmlTable = `
         <div style="background: #fff; border: 1px solid #1565c0; border-radius: 8px; overflow: hidden; margin-top: 20px;">
-            <h4 style="background: #1565c0; color: white; margin: 0; padding: 10px; text-align: center; font-size: 14px;">📑 Memória de Cálculo (Auditoria)</h4>
+            <h4 style="background: #1565c0; color: white; margin: 0; padding: 10px; text-align: center; font-size: 14px;">📑 HOLERITE</h4>
             <div style="padding: 15px; overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
                     <tr style="border-bottom: 2px solid #ccc;">
@@ -1014,7 +1010,7 @@ window.calcularEInjetarModularCirurgico = () => {
                 </table>
             </div>
             <div style="background: #e8f5e9; padding: 10px; text-align: center; font-size: 12px; color: #1b5e20;">
-                O Salário Líquido e o Adiantamento já foram enviados para a aba <b>Fechamento</b>. 
+                O Salário Líquido e o Adiantamento já foram enviados para a aba <b>FINANCEIRO MODULAR</b>. 
                 Pode auditar os valores acima e salvar!
             </div>
         </div>
