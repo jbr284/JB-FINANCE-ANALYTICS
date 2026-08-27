@@ -43,9 +43,9 @@
       <div class="hub-overlay"></div>
       <div class="hub-content">
           <div class="hub-title">JB Finance Analytics</div>
-          <button class="btn-vidro btn-sari-glass" onclick="window.abrirModulo('saripan')"><span class="btn-icone">🏢</span> Módulo SARIPAN</button>
-          <button class="btn-vidro btn-mod-glass" onclick="window.abrirModulo('modular')"><span class="btn-icone">🏭</span> Módulo MODULAR</button>
-          <button class="btn-vidro btn-geral-glass" onclick="window.abrirModulo('geral')"><span class="btn-icone">📊</span> VISÃO GERAL</button>
+          <button class="btn-vidro btn-sari-glass" onclick="window.abrirModulo('saripan')"><span class="btn-icone">🏢</span> SARIPAN</button>
+          <button class="btn-vidro btn-mod-glass" onclick="window.abrirModulo('modular')"><span class="btn-icone">🏭</span> MODULAR</button>
+          <button class="btn-vidro btn-geral-glass" onclick="window.abrirModulo('geral')"><span class="btn-icone">📊</span> INDICADORES</button>
           <button class="btn-vidro btn-sair-glass" onclick="window.sairApp()">Sair da Conta</button>
       </div>
   </div>
@@ -55,7 +55,7 @@
     
     <div class="app-header">
         <button class="btn-nav-top" onclick="window.voltarAoHub()">⬅ Voltar</button>
-        <div id="app-title" class="app-title">JB Finance Analytics V6.8</div>
+        <div id="app-title" class="app-title">JB Finance Analytics V6.9</div>
         <button id="btn-privacidade" class="btn-nav-top" onclick="window.togglePrivacidade()"></button>
     </div>
 
@@ -103,8 +103,8 @@
         
         <div class="fixed-area">
             <div class="tabs-container">
-              <button id="btn-tab-mod-fechamento" class="tab-btn active" onclick="window.mudarAbaModular('fechamento')">📋 Fechamento</button>
-              <button id="btn-tab-mod-simulador" class="tab-btn" onclick="window.mudarAbaModular('simulador')">🧮 Simulador</button>
+              <button id="btn-tab-mod-fechamento" class="tab-btn active" onclick="window.mudarAbaModular('fechamento')">📋 FINANCEIRO MODULAR</button>
+              <button id="btn-tab-mod-simulador" class="tab-btn" onclick="window.mudarAbaModular('simulador')">🧮 CALC. FOLHA MENSAL</button>
             </div>
         </div>
         
@@ -120,18 +120,18 @@
                 </div>
 
                 <div class="form-box">
-                    <h3 class="form-title">Fechamento Mensal (Modular)</h3>
+                    <h3 class="form-title">FECHAMENTO MENSAL</h3>
                     <label>Mês de Referência:</label><input type="month" id="mesModular" style="margin-bottom: 15px; padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 4px;" onchange="window.preencherFormularioModular()">
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
                         <div><label>Adiant. (Dia 15):</label><input type="text" id="viewAdiantamento" readonly class="esconder-valor" style="background: #f5f5f5; color: #666; font-weight: bold;"></div>
                         <div><label>Salário Líq. (Dia 30):</label><input type="number" id="inputSalarioLiquido" placeholder="0.00"></div>
                     </div>
                     <div class="grid-input" style="margin-top: 10px;">
-                        <div><label>Extras (Opcional):</label><input type="number" id="inputExtras" placeholder="0.00"></div>
+                        <div><label>EXTRAS:</label><input type="number" id="inputExtras" placeholder="0.00"></div>
                         <div><label>Desc. Extras:</label><input type="text" id="descExtras" placeholder="Ex: Prêmio, PLR"></div>
                     </div>
                     <div style="background: #e8f5e9; border: 1px dashed #a5d6a7; padding: 10px; margin-top: 15px; border-radius: 6px; text-align: center;"><div style="font-size: 12px; color: #2e7d32; font-weight: bold;">Benefícios Fixos: + R$ 1.225,00</div></div>
-                    <button class="btn-action btn-green" style="margin-top: 15px;" onclick="window.salvarMesModular()">💾 Salvar Fechamento Real</button>
+                    <button class="btn-action btn-green" style="margin-top: 15px;" onclick="window.salvarMesModular()">💾 REGISTRAR MÊS</button>
                 </div>
 
                 <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico Analítico Modular</h3>
@@ -141,7 +141,7 @@
             <div id="painel-mod-simulador" class="panel" style="padding: 15px; background: #f0f2f5;">
                 <div class="form-box">
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border: 1px solid #90caf9; margin-bottom: 15px;">
-                        <h4 style="color: #0d47a1; font-size: 13px; margin-bottom: 10px; border-bottom: 1px solid #bbdefb; padding-bottom: 5px;">📅 Motor de Calendário e DSR</h4>
+                        <h4 style="color: #0d47a1; font-size: 13px; margin-bottom: 10px; border-bottom: 1px solid #bbdefb; padding-bottom: 5px;">📅 CALENDÁRIO MENSAL</h4>
                         <div class="grid-input" style="grid-template-columns: 1fr 1fr;">
                             <div><label>Mês da Folha:</label><input type="month" id="calc-mes-ref" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></div>
                             <div><label>Feriados Regionais:</label><input type="text" id="calc-feriados-extras" placeholder="Ex: 15/08, 20/11" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"></div>
@@ -153,7 +153,7 @@
                         </div>
                     </div>
 
-                    <h4 style="font-size: 12px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px;">REGIME DO MÊS (FÉRIAS)</h4>
+                    <h4 style="font-size: 12px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px;">REGIME DO MÊS</h4>
                     <div class="grid-input" style="grid-template-columns: 1fr 1fr; margin-bottom:10px;">
                         <div>
                             <label>Tipo de Mês:</label>
@@ -207,8 +207,8 @@
                         <div><label>Dependentes:</label><input type="number" id="calc-dependentes" placeholder="0"></div>
                     </div>
                     
-                    <button class="btn-action" style="background:#e65100; font-size: 13px; padding: 12px; margin-bottom: 20px;" onclick="window.memorizarPadroesCalculadora()">💾 Memorizar Padrões de Desconto</button>
-                    <button class="btn-action btn-green" style="font-size: 15px; padding: 18px;" onclick="window.calcularEInjetarModularCirurgico()">⚙️ Calcular Folha e Gerar Espelho</button>
+                    <button class="btn-action" style="background:#e65100; font-size: 13px; padding: 12px; margin-bottom: 20px;" onclick="window.memorizarPadroesCalculadora()">💾 SALVAR DESCONTOS FIXOS</button>
+                    <button class="btn-action btn-green" style="font-size: 15px; padding: 18px;" onclick="window.calcularEInjetarModularCirurgico()">⚙️ GERAR HOLERITE</button>
 
                     <div id="tabela-auditoria" style="display: none; margin-top: 20px;"></div>
                 </div>
@@ -227,7 +227,7 @@
             <div style="margin-top: 10px;"><label>Descrição:</label><input type="text" id="descExtra" style="border: 1px solid #ffcc80; width: 100%;"></div>
             <button class="btn-action" style="background-color: #f57c00; margin-top: 15px;" onclick="window.adicionarRegistroExtra()">➕ Adicionar</button>
         </div>
-        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">Histórico de Extras</h3><div id="lista-extra-container" style="margin-bottom: 30px;"></div>
+        <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:20px;">RENDAS EXTRAS</h3><div id="lista-extra-container" style="margin-bottom: 30px;"></div>
         <h3 style="color:#0d47a1; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-top:0;">Evolução Financeira</h3><div id="dashboard-geral-content"></div>
     </div>
   </div>
@@ -268,7 +268,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <script type="module" src="app.js?v=6.8"></script>
+  <script type="module" src="app.js?v=6.9"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
