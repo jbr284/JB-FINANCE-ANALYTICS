@@ -99,6 +99,101 @@ async function verificarEGerarAdiantamentoAutomatico() {
 }
 
 // ==========================================
+// COMPARTILHAMENTO WHATSAPP (SARIPAN)
+// ==========================================
+window.compartilharRelatorio = async (chaveGrupo) => {
+    const [anoStr, mesStr, quinzenaStr] = chaveGrupo.split('-');
+    const ano = parseInt(anoStr); const mes = parseInt(mesStr); const quinzena = parseInt(quinzenaStr);
+    
+    const itens = window.registros.filter(r => r.ano === ano && r.mes === mes && r.quinzena === quinzena);
+    if (itens.length === 0) return alert("Nenhum registro para compartilhar.");
+    
+    itens.sort((a, b) => new Date(a.data) - new Date(b.data));
+
+    let texto = `*Relatório SARIPAN*\n🗓️ *${quinzena}ª Quinzena - ${MESES[mes]} ${ano}*\n\n`;
+    let totalDinheiro = 0;
+    let qtdDiarias = 0;
+
+    let trs = '';
+    itens.forEach(item => {
+        const [, m, d] = item.data.split('-'); 
+        const dataFmt = `${d}/${m}`;
+        const tipoStr = item.carga === 1 ? 'Normal' : 'Dupla';
+        const diaStr = item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Dom' : 'Fer');
+        
+        texto += `✅ ${dataFmt} - ${tipoStr} (${diaStr}) - R$ ${item.total.toFixed(2)}\n`;
+        totalDinheiro += item.total;
+        qtdDiarias += item.multiplicador;
+
+        const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+        const dObj = new Date(item.data + 'T12:00:00'); 
+        const diaDaSemana = diasSemana[dObj.getDay()];
+
+        trs += `<tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${dataFmt}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${diaDaSemana}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${tipoStr}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Domingo' : 'Feriado')}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #2e7d32;">R$ ${item.total.toFixed(2)}</td>
+        </tr>`;
+    });
+
+    texto += `\n📊 *Total de Diárias:* ${qtdDiarias}`;
+    texto += `\n💰 *Valor Total:* R$ ${totalDinheiro.toFixed(2)}`;
+
+    document.getElementById('print-ref').innerText = `Referência: ${quinzena}ª Quinzena de ${MESES[mes]} ${ano}`;
+    document.getElementById('print-total-diarias').innerText = `Total: ${qtdDiarias} diárias a receber`;
+    document.getElementById('print-valor-total').innerText = `R$ ${totalDinheiro.toFixed(2)}`;
+    document.getElementById('print-tbody').innerHTML = trs;
+
+    window.mostrarToast("Gerando recibo em imagem...");
+    
+    try {
+        const printContainer = document.getElementById('print-container');
+        // Traz temporariamente para a tela (escondido atrás de tudo) para o Canvas conseguir desenhar
+        printContainer.style.top = '0';
+        printContainer.style.left = '0';
+        
+        const canvas = await html2canvas(document.getElementById('print-template'), { scale: 2, useCORS: true });
+        
+        // Esconde de novo
+        printContainer.style.top = '-9999px';
+        printContainer.style.left = '-9999px';
+
+        canvas.toBlob(async (blob) => {
+            const file = new File([blob], `Relatorio_Saripan_${quinzena}Q_${MESES[mes]}_${ano}.png`, { type: 'image/png' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: 'Relatório Saripan',
+                        text: texto,
+                        files: [file]
+                    });
+                } catch (e) {
+                    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+                    window.open(url, '_blank');
+                }
+            } else {
+                // Download da imagem e abre WhatsApp
+                const link = document.createElement('a');
+                link.download = file.name;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                
+                const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+                window.open(url, '_blank');
+            }
+        }, 'image/png');
+        
+    } catch(err) {
+        console.error("Erro ao gerar imagem", err);
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+        window.open(url, '_blank');
+    }
+};
+
+// ==========================================
 // MÓDULO MODULAR E GESTÃO
 // ==========================================
 window.salvarSalarioBase = async () => {
@@ -161,7 +256,6 @@ window.salvarMesModular = async () => {
 
     const idUnico = `MOD-${ano}-${mes + 1}`;
     
-    // Pega o valor exato do adiantamento gerado pela calculadora no DOM
     const adiantamentoStr = document.getElementById('viewAdiantamento').value.replace('R$', '').trim();
     const adiantamento = parseFloat(adiantamentoStr) || (salarioBase * 0.40);
     
@@ -327,7 +421,7 @@ window.renderizarDashboardGeral = () => {
 };
 
 // ==========================================
-// MÓDULO EXTRA E SARIPAN
+// MÓDULO EXTRA E SARIPAN (COM BOTÃO WHATSAPP)
 // ==========================================
 window.adicionarRegistroExtra = async () => {
     const d = document.getElementById('dataExtra').value;
@@ -487,7 +581,10 @@ window.renderizarApontamentosSaripan = () => {
             htmlRows += `<tr><td>${dataFmt}</td><td>${diaDaSemana}</td><td>${tipoStr}</td><td>${diaStr}</td><td class="td-valor esconder-valor">${totalItemFmt}</td><td class="td-acao"><span style="color:red; cursor:pointer;" onclick="window.excluirRegistro('${item.id}')">✖</span></td></tr>`;
         });
 
-        const btnPrint = `<button class="btn-icon" style="color:#25D366; font-size: 20px; padding: 5px; margin-right: 5px;" onclick="event.stopPropagation(); window.compartilharRelatorio('${chave}')">🖨️</button>`;
+        // BOTÃO OFICIAL DO WHATSAPP
+        const btnWhatsApp = `<button class="btn-icon" style="background: none; border: none; cursor: pointer; padding: 5px; margin-right: 5px;" onclick="event.stopPropagation(); window.compartilharRelatorio('${chave}')" title="Compartilhar no WhatsApp">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="22" height="22" fill="#25D366"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-23.1-115-65-157zM223.9 438.3c-33.1 0-65.5-8.9-94-25.8l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 54.3 0 105.4 21.2 143.8 59.6 38.4 38.4 59.6 89.5 59.6 143.8 0 101.8-82.8 184.5-184.6 184.5zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
+        </button>`;
         const btnExcluirGrupo = `<button class="btn-icon" style="color:#d32f2f; font-size:20px; padding:5px;" onclick="event.stopPropagation(); window.excluirQuinzena('${chave}')">🗑️</button>`;
 
         const div = document.createElement('div');
@@ -495,7 +592,7 @@ window.renderizarApontamentosSaripan = () => {
         div.innerHTML = `
             <div class="accordion-header ${activeClass}" onclick="this.classList.toggle('active'); this.nextElementSibling.classList.toggle('open');">
                 <div><div class="accordion-title">${grupo.quinzena}ª Quinzena - ${MESES[grupo.mes]} ${grupo.ano}</div><div class="accordion-meta">${grupo.itens.length} registros</div></div>
-                <div class="accordion-actions" style="display:flex; align-items:center;">${btnPrint} ${btnExcluirGrupo}</div>
+                <div class="accordion-actions" style="display:flex; align-items:center;">${btnWhatsApp} ${btnExcluirGrupo}</div>
             </div>
             <div class="accordion-content ${openClass}">
                 <table><thead><tr><th>Data</th><th>Dia</th><th>Tipo</th><th>Detalhes</th><th style="text-align:right">Valor</th><th></th></tr></thead>
@@ -613,7 +710,7 @@ window.abrirModulo = (modulo) => {
     if (modEl) modEl.classList.add('active');
     
     const titulos = { 'saripan': 'Módulo SARIPAN', 'modular': 'Módulo MODULAR', 'geral': 'Visão Geral (Evolução)' };
-    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.7';
+    document.getElementById('app-title').innerText = titulos[modulo] || 'JB Finance Analytics V6.8';
     
     if (modulo === 'geral' && window.renderizarDashboardGeral) window.renderizarDashboardGeral();
     if (modulo === 'modular') { 
@@ -660,7 +757,6 @@ window.converterParaDecimal = (valor) => {
     return isNaN(num) ? '' : num.toFixed(2);
 };
 
-// === NOVA LÓGICA DE FÉRIAS RESTAURADA ===
 window.alternarModoFerias = () => {
     const modo = document.getElementById('calc-tipo-mes').value;
     const box = document.getElementById('box-ferias');
@@ -759,7 +855,7 @@ window.atualizarCalendarioCirurgico = () => {
     document.getElementById('calc-domferiados').value = domFeriados;
     document.getElementById('calc-dias').value = diasNoMes;
     
-    window.calcularDiasProporcionaisFerias(); // Recalcula se mudar o mês
+    window.calcularDiasProporcionaisFerias();
 };
 
 window.memorizarPadroesCalculadora = async () => {
@@ -786,7 +882,6 @@ window.calcularEInjetarModularCirurgico = () => {
 
     if (diasUteis === 0 && domFeriados === 0) return alert("Selecione o Mês da Folha no calendário para gerar os Dias Úteis e Feriados!");
 
-    // O sistema agora lê os dias proporcionais trabalhados baseados nas férias
     const diasTrab = parseFloat(document.getElementById('calc-dias-trab').value) || 30; 
     
     const dependentes = parseFloat(document.getElementById('calc-dependentes').value) || 0;
@@ -809,7 +904,6 @@ window.calcularEInjetarModularCirurgico = () => {
     const valorDia = salarioBase / 30;
     const valorHora = salarioBase / 220;
 
-    // Se o mês estiver quebrado por férias, o salário base é proporcional. Se for 30 dias, é integral.
     const vencBase = (salarioBase / 30) * diasTrab; 
     
     const valorHE50 = he50 * valorHora * 1.5;
@@ -827,7 +921,6 @@ window.calcularEInjetarModularCirurgico = () => {
 
     const descontoFaltas = faltas * valorDia;
     const descontoAtrasos = atrasos * valorHora;
-    // Adiantamento proporcional aos dias trabalhados na folha, conforme a sua lógica antiga
     const adiantamento = (salarioBase / 30) * diasTrab * regrasCirurgicas.percentualAdiantamento;
     const descontoVA = regrasCirurgicas.descontoFixoVA;
     const descontoVT = descontarVT ? (salarioBase * regrasCirurgicas.percentualVT) : 0;
