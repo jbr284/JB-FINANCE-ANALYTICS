@@ -118,7 +118,12 @@ window.compartilharRelatorio = async (chaveGrupo) => {
     itens.forEach(item => {
         const [, m, d] = item.data.split('-'); 
         const dataFmt = `${d}/${m}`;
-        const tipoStr = item.carga === 1 ? 'Normal' : 'Dupla';
+        
+        let tipoStr = item.carga === 1 ? 'Normal' : (item.carga === 2 ? 'Dupla' : 'Tripla');
+        if (item.carga === 3 && item.justificativa) {
+            tipoStr += ` ---> ${item.justificativa}`;
+        }
+
         const diaStr = item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Dom' : 'Fer');
         
         texto += `✅ ${dataFmt} - ${tipoStr} (${diaStr}) - R$ ${item.total.toFixed(2)}\n`;
@@ -469,12 +474,15 @@ window.obterPeriodo = (dataStr) => {
     return { ano: dateObj.getUTCFullYear(), mes: dateObj.getUTCMonth(), dia: dateObj.getUTCDate(), quinzena: dateObj.getUTCDate() <= 15 ? 1 : 2 };
 };
 
+// O MOTOR MATEMÁTICO BLINDADO DA PREVISÃO
 window.atualizarPreview = () => {
     const base = parseFloat(document.getElementById('valorBase').value) || 0;
     const carga = parseInt(document.getElementById('tipoCarga').value);
     const tipoDia = parseInt(document.getElementById('tipoDia').value);
-    let multiplicador = 1;
-    if (tipoDia === 3 || tipoDia === 2) { multiplicador = carga === 2 ? 4 : 2; } else { multiplicador = carga; }
+    
+    let multiplicador = carga;
+    if (tipoDia === 3 || tipoDia === 2) { multiplicador = carga * 2; } 
+    
     const previewEl = document.getElementById('previewValor');
     if (previewEl) previewEl.value = `R$ ${(base * multiplicador).toFixed(2)}`;
 };
@@ -492,20 +500,29 @@ window.atualizarRodapeDinamico = () => {
     if(rodapeRef) rodapeRef.innerText = `Referência: ${p.quinzena}ª Quinz. de ${MESES[p.mes]} ${p.ano}`;
 };
 
+// O MOTOR DE REGISTRO BLINDADO
 window.adicionarRegistro = async () => {
     const dataInput = document.getElementById('dataServico').value;
     if (!dataInput) return alert("Selecione uma data!");
     const base = parseFloat(document.getElementById('valorBase').value);
     const carga = parseInt(document.getElementById('tipoCarga').value);
     const tipoDia = parseInt(document.getElementById('tipoDia').value);
+    const justificativa = document.getElementById('justificativaTripla') ? document.getElementById('justificativaTripla').value.trim() : '';
+
+    if (carga === 3 && !justificativa) return alert("A justificativa é obrigatória para o apontamento de Jornada Tripla.");
+
     const p = window.obterPeriodo(dataInput);
     
-    let multiplicador = 1;
-    if (tipoDia === 3 || tipoDia === 2) { multiplicador = carga === 2 ? 4 : 2; } else { multiplicador = carga; }
+    let multiplicador = carga;
+    if (tipoDia === 3 || tipoDia === 2) { multiplicador = carga * 2; }
     
     const total = base * multiplicador;
     const idUnico = Date.now().toString();
-    const novoRegistro = { id: idUnico, data: dataInput, ano: p.ano, mes: p.mes, quinzena: p.quinzena, carga: carga, tipoDia: tipoDia, valorBase: base, multiplicador: multiplicador, total: total };
+    const novoRegistro = { 
+        id: idUnico, data: dataInput, ano: p.ano, mes: p.mes, quinzena: p.quinzena, 
+        carga: carga, tipoDia: tipoDia, valorBase: base, multiplicador: multiplicador, 
+        total: total, justificativa: justificativa 
+    };
 
     try {
         await setDoc(doc(db, "apontamentos", idUnico), novoRegistro);
@@ -515,6 +532,9 @@ window.adicionarRegistro = async () => {
         window.renderizarFinanceiroSaripan();
         window.renderizarDashboardGeral();
         window.mostrarToast("Apontamento salvo com sucesso!");
+        
+        // Limpa a justificativa após salvar para não ficar presa na tela
+        if(document.getElementById('justificativaTripla')) document.getElementById('justificativaTripla').value = ''; 
     } catch (e) { console.error(e); alert("Erro ao salvar!"); }
 };
 
@@ -541,6 +561,7 @@ window.excluirQuinzena = async (chaveGrupo) => {
     } catch (e) { console.error(e); alert("Erro ao excluir quinzena"); }
 };
 
+// IMPRESSÃO DE TABELAS ATUALIZADA COM O NOME DA JUSTIFICATIVA
 window.renderizarApontamentosSaripan = () => {
     const container = document.getElementById('lista-quinzenas-container');
     if(!container) return; container.innerHTML = "";
@@ -569,7 +590,12 @@ window.renderizarApontamentosSaripan = () => {
         let htmlRows = '';
         grupo.itens.forEach(item => {
             const [, mes, dia] = item.data.split('-'); const dataFmt = `${dia}/${mes}`;
-            const tipoStr = item.carga === 1 ? 'Normal' : 'Dupla';
+            
+            let tipoStr = item.carga === 1 ? 'Normal' : (item.carga === 2 ? 'Dupla' : 'Tripla');
+            if (item.carga === 3 && item.justificativa) {
+                tipoStr += ` ---> ${item.justificativa}`;
+            }
+
             const diaStr = item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Dom' : 'Fer');
             const totalItemFmt = `R$ ${item.total.toFixed(2)}`;
             const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
@@ -1038,7 +1064,22 @@ window.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('dataExtra')) document.getElementById('dataExtra').value = `${ano}-${mes}-${dia}`;
     if (document.getElementById('mesModular')) document.getElementById('mesModular').value = `${ano}-${mes}`;
     
-    ['valorBase', 'tipoCarga', 'tipoDia'].forEach(id => { document.getElementById(id)?.addEventListener('input', window.atualizarPreview); });
+    // ATIVAÇÃO DA NOVA LÓGICA DE JORNADA TRIPLA
+    document.getElementById('tipoCarga')?.addEventListener('change', function() {
+        const val = parseInt(this.value);
+        const bloco = document.getElementById('bloco-justificativa');
+        if (bloco) {
+            if (val === 3) {
+                bloco.style.display = 'block';
+            } else {
+                bloco.style.display = 'none';
+                document.getElementById('justificativaTripla').value = '';
+            }
+        }
+        window.atualizarPreview();
+    });
+
+    ['valorBase', 'tipoDia'].forEach(id => { document.getElementById(id)?.addEventListener('input', window.atualizarPreview); });
     
     const mesRefCalc = document.getElementById('calc-mes-ref');
     const feriadosExtrasCalc = document.getElementById('calc-feriados-extras');
