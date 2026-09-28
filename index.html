@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JB Finance Analytics</title>
   
+  <script>
+    // Redirecionamento Reverso: Se o ecrã for de computador/tablet grande (>= 1024px), carrega o Dashboard.
+    if (window.innerWidth >= 1024) {
+      window.location.replace("desktop.html");
+    }
+  </script>
+
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
   <meta name="theme-color" content="#002f6c">
@@ -246,7 +253,7 @@
     </div>
   </div>
 
-  <!-- CONTAINER PRINT -->
+  <!-- CONTAINER PRINT Oculto -->
   <div id="print-container" style="position: absolute; top: -9999px; left: -9999px; z-index: -9999; width: 800px;">
       <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
           <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório de Diárias</h1>
