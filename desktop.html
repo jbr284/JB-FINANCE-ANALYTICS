@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JB Finance Analytics - Desktop</title>
+  
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+  <link rel="stylesheet" href="desktop.css">
+</head>
+<body>
+
+  <div id="toast">✅ Operação realizada com sucesso!</div>
+
+  <!-- TELA LOGIN -->
+  <div id="tela-login" class="container-center hidden">
+    <div class="login-box">
+      <img src="JBFINANCELOGO.png" alt="Logo" style="max-width: 150px; margin-bottom: 20px;">
+      <h1 style="color:#0a192f; font-size: 24px; margin-bottom: 5px;">JB Finance Analytics</h1>
+      <p style="color:#666; margin-bottom: 30px; font-size: 13px; text-transform: uppercase;">Acesso Administrativo</p>
+      <input type="email" id="emailLogin" class="input-login" placeholder="E-mail Corporativo">
+      <input type="password" id="senhaLogin" class="input-login" placeholder="Senha">
+      <button class="btn-action btn-blue" onclick="window.fazerLogin()" style="width: 100%; padding: 15px;">Entrar no Sistema</button>
+    </div>
+  </div>
+
+  <!-- APP PRINCIPAL DESKTOP -->
+  <div id="app" class="hidden">
+    
+    <!-- BARRA LATERAL (SIDEBAR) -->
+    <aside class="sidebar noprint">
+      <div class="sidebar-header">
+        <h2>JB FINANCE</h2>
+        <p>Analytics Executivo</p>
+      </div>
+      
+      <div class="menu-section">Auditoria Saripan</div>
+      <button class="menu-btn active" id="btn-tab-sari-historico" onclick="window.mudarAba('sari-historico')">📋 Extratos & Auditoria</button>
+      <button class="menu-btn" id="btn-tab-sari-financeiro" onclick="window.mudarAba('sari-financeiro')">💰 Balanço Financeiro</button>
+      
+      <div class="menu-section" style="margin-top: 15px;">Modular Operacional</div>
+      <button class="menu-btn" id="btn-tab-mod-fechamento" onclick="window.mudarAba('mod-fechamento')">📝 Fechamento Mensal</button>
+      <button class="menu-btn" id="btn-tab-mod-simulador" onclick="window.mudarAba('mod-simulador')">🧮 Simulador de Folha</button>
+      
+      <div class="menu-section" style="margin-top: 15px;">Análise Global</div>
+      <button class="menu-btn" id="btn-tab-geral-indicadores" onclick="window.mudarAba('geral-indicadores')">📊 Renda Extra & Indicadores</button>
+      
+      <div class="sidebar-footer">
+        <button class="btn-sidebar-action" id="btn-privacidade" onclick="window.togglePrivacidade()">👁️ Modo Privacidade</button>
+        <button class="btn-sidebar-action btn-sair" onclick="window.sairApp()">🚪 Sair do Sistema</button>
+      </div>
+    </aside>
+
+    <!-- ÁREA DE TRABALHO -->
+    <main class="main-content">
+      
+      <!-- ABA: SARIPAN - HISTÓRICO -->
+      <div id="painel-sari-historico" class="panel active">
+        <h2 class="page-title">Auditoria de Diárias Saripan</h2>
+        <p style="color: #666; margin-top: -15px; margin-bottom: 25px; font-size: 14px;">(Modo Leitura e Exclusão. Inserções são feitas via Mobile)</p>
+        <div id="lista-quinzenas-container"></div>
+        <div id="msg-sem-dados" style="text-align:center; padding: 40px; color:#999; display:none;">Nenhum registro encontrado.</div>
+      </div>
+
+      <!-- ABA: SARIPAN - FINANCEIRO -->
+      <div id="painel-sari-financeiro" class="panel">
+        <h2 class="page-title">Balanço Financeiro Saripan</h2>
+        <div id="financeiro-content"></div>
+      </div>
+
+      <!-- ABA: MODULAR - FECHAMENTO -->
+      <div id="painel-mod-fechamento" class="panel">
+        <h2 class="page-title">Gestão e Fechamento Modular</h2>
+        
+        <div class="card card-blue" style="max-width: 600px;">
+          <h4 class="card-title">⚙️ Parâmetro: Salário Base Contratual</h4>
+          <div style="display: flex; gap: 15px; align-items: flex-end;">
+              <div style="flex: 1;"><label>Valor Vigente (R$):</label><input type="number" id="configSalarioBase" placeholder="0.00"></div>
+              <button class="btn-action btn-blue" onclick="window.salvarSalarioBase()">Salvar Parâmetro</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h4 class="card-title">Lançamento de Fechamento Mensal</h4>
+          <div class="grid-input-4">
+              <div style="grid-column: span 2;"><label>Mês de Referência:</label><input type="month" id="mesModular" onchange="window.preencherFormularioModular()"></div>
+              <div><label>Adiant. Automático (Dia 15):</label><input type="text" id="viewAdiantamento" readonly class="esconder-valor"></div>
+              <div><label>Salário Líquido (Dia 30):</label><input type="number" id="inputSalarioLiquido" placeholder="0.00"></div>
+          </div>
+          <div class="grid-input-2">
+              <div><label>Rendas Extras na Folha (R$):</label><input type="number" id="inputExtras" placeholder="0.00"></div>
+              <div><label>Descrição das Extras:</label><input type="text" id="descExtras" placeholder="Ex: Prêmio Metas, PLR, Bonificação"></div>
+          </div>
+          <div style="background: #e8f5e9; border: 1px dashed #a5d6a7; padding: 15px; margin-top: 15px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 14px; color: #2e7d32; font-weight: bold;">Benefícios Fixos Incorporados ao Saldo: + R$ 1.225,00</div>
+          </div>
+          <button class="btn-action btn-green" style="margin-top: 20px; padding: 15px; font-size: 15px;" onclick="window.salvarMesModular()">💾 GRAVAR FECHAMENTO DO MÊS</button>
+        </div>
+
+        <h3 style="color:#0a192f; margin-top: 40px; margin-bottom: 15px;">Histórico Analítico Consolidado</h3>
+        <div id="lista-modular-container"></div>
+      </div>
+
+      <!-- ABA: MODULAR - SIMULADOR CIRÚRGICO -->
+      <div id="painel-mod-simulador" class="panel">
+        <h2 class="page-title">Simulador Cirúrgico de Folha</h2>
+        
+        <div class="card card-blue">
+            <h4 class="card-title">📅 1. Base do Calendário e DSR</h4>
+            <div class="grid-input-2">
+                <div><label>Mês da Folha:</label><input type="month" id="calc-mes-ref"></div>
+                <div><label>Feriados Regionais / Opcionais:</label><input type="text" id="calc-feriados-extras" placeholder="Ex: 15/08, 20/11"></div>
+            </div>
+            <div class="grid-input-3" style="margin-top: 15px;">
+                <div><label>Dias Úteis:</label><input type="number" id="calc-diasuteis" readonly style="color: #0d47a1; font-weight: bold;"></div>
+                <div><label>Domingos/Feriados:</label><input type="number" id="calc-domferiados" readonly style="color: #c62828; font-weight: bold;"></div>
+                <div><label>Total de Dias do Mês:</label><input type="number" id="calc-dias" readonly></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4 class="card-title">💼 2. Regime de Trabalho na Folha</h4>
+            <div class="grid-input-2">
+                <div>
+                    <label>Modo do Mês:</label>
+                    <select id="calc-tipo-mes">
+                        <option value="completo">Mês Completo (Normal)</option>
+                        <option value="saida_ferias">Mês com Saída para Férias</option>
+                        <option value="retorno_ferias">Mês com Retorno de Férias</option>
+                    </select>
+                </div>
+                <div><label>Dias Trabalhados Apurados:</label><input type="number" id="calc-dias-trab" value="30" readonly style="background: #e8f0fe; color: #1565c0; font-weight: bold;"></div>
+            </div>
+            <div id="box-ferias" class="grid-input-2 hidden" style="background: #fff3e0; padding: 15px; border-radius: 6px; border: 1px dashed #ffb74d; margin-top: 10px;">
+                <div><label id="lbl-data-ferias">Dia Base (Saída/Retorno):</label><input type="number" id="calc-dia-ferias" placeholder="Ex: 15" min="1" max="31"></div>
+                <div id="col-qtd-ferias"><label>Duração das Férias (Dias):</label><input type="number" id="calc-qtd-ferias" placeholder="Ex: 30"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4 class="card-title">📈 3. Proventos (Horas Extras e Adicionais)</h4>
+            <div class="grid-input-3">
+                <div><label>H.E. 50% (hh:mm):</label><input type="text" id="calc-he50" class="input-horas" placeholder="Ex: 6:15"></div>
+                <div><label>H.E. 60% (hh:mm):</label><input type="text" id="calc-he60" class="input-horas" placeholder="Ex: 6:15"></div>
+                <div><label>H.E. 80% (hh:mm):</label><input type="text" id="calc-he80" class="input-horas" placeholder="Ex: 6:15"></div>
+            </div>
+            <div class="grid-input-3">
+                <div><label>H.E. 100% (hh:mm):</label><input type="text" id="calc-he100" class="input-horas" placeholder="Ex: 6:15"></div>
+                <div><label>H.E. 150% (hh:mm):</label><input type="text" id="calc-he150" class="input-horas" placeholder="Ex: 6:15"></div>
+                <div><label>Adicional Noturno (hh:mm):</label><input type="text" id="calc-noturno" class="input-horas" placeholder="Ex: 6:15"></div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #c62828;">
+            <h4 class="card-title" style="color: #c62828;">📉 4. Descontos e Variáveis</h4>
+            <div class="grid-input-2">
+                <div><label>Faltas (dias inteiros):</label><input type="number" id="calc-faltas" placeholder="0"></div>
+                <div><label>Atrasos (hh:mm):</label><input type="text" id="calc-atrasos" class="input-horas" placeholder="Ex: 1:30"></div>
+            </div>
+            <div class="grid-input-4">
+                <div><label>Plano SESI:</label><select id="calc-plano"><option value="nenhum">Nenhum</option><option value="basico_individual">Básico Indiv.</option><option value="basico_familiar">Básico Fam.</option><option value="plus_individual">Plus Indiv.</option><option value="plus_familiar">Plus Fam.</option></select></div>
+                <div><label>Coparticipação R$:</label><input type="number" id="calc-copart" placeholder="0.00"></div>
+                <div><label>Empréstimo R$:</label><input type="number" id="calc-emprestimo" placeholder="0.00"></div>
+                <div><label>Desconto Sindical:</label><select id="calc-sindicato"><option value="nao">Não</option><option value="sim">Sim</option></select></div>
+            </div>
+            <div class="grid-input-2">
+                <div><label>Descontar VT (6%):</label><select id="calc-vt"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+                <div><label>Dependentes (IRRF):</label><input type="number" id="calc-dependentes" placeholder="0"></div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+              <button class="btn-action btn-orange" style="flex: 1;" onclick="window.memorizarPadroesCalculadora()">💾 Salvar Descontos Padrão</button>
+              <button class="btn-action btn-green" style="flex: 2; font-size: 16px;" onclick="window.calcularEInjetarModularCirurgico()">⚙️ CALCULAR E GERAR HOLERITE</button>
+            </div>
+        </div>
+
+        <div id="tabela-auditoria" style="display: none; margin-top: 30px;"></div>
+      </div>
+
+      <!-- ABA: GERAL - INDICADORES E EXTRA -->
+      <div id="painel-geral-indicadores" class="panel">
+        <h2 class="page-title">Visão Global e Rendas Avulsas</h2>
+        
+        <div class="card card-yellow">
+            <h4 class="card-title card-title-yellow">➕ Lançar Nova Renda Extra</h4>
+            <div class="grid-input-3">
+                <div><label>Data de Recebimento:</label><input type="date" id="dataExtra" style="border-color: #ffcc80;"></div>
+                <div><label>Valor Apurado (R$):</label><input type="number" id="valorExtra" placeholder="0.00" style="border-color: #ffcc80;"></div>
+                <div><label>Descrição / Origem:</label><input type="text" id="descExtra" placeholder="Ex: Venda, Bico..." style="border-color: #ffcc80;"></div>
+            </div>
+            <button class="btn-action btn-orange" style="width: 250px;" onclick="window.adicionarRegistroExtra()">Lançar ao Caixa</button>
+        </div>
+
+        <div class="grid-input-2">
+          <div>
+            <h3 style="color:#0a192f; margin-top: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">Extrato de Rendas Extras</h3>
+            <div id="lista-extra-container"></div>
+          </div>
+        </div>
+
+        <h3 style="color:#0a192f; margin-top: 40px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">Evolução Financeira Global</h3>
+        <div id="dashboard-geral-content"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- CONTAINER PRINT Oculto -->
+  <div id="print-container" style="position: absolute; top: -9999px; left: -9999px; z-index: -9999; width: 800px;">
+      <div id="print-template" style="width: 800px; background: white; padding: 40px; font-family: Arial, sans-serif; color: #000; box-sizing: border-box;">
+          <h1 style="font-size: 28px; margin: 0 0 20px 0; color: #000;">SARIPAN - Relatório de Diárias</h1>
+          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
+              <div>Prestador: João Batista Rosa</div>
+              <div id="print-ref">Referência: --</div>
+          </div>
+          <div style="font-size: 18px; line-height: 1.6; margin-bottom: 30px;">
+              <div style="font-weight: bold;">Resumo do Período:</div>
+              <div style="font-weight: bold; margin-top: 15px; font-size: 20px;" id="print-total-diarias">Total: -- diárias a receber</div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+              <thead>
+                  <tr style="background-color: #00AEEF; color: #000;">
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Data</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Dia da Semana</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Tipo de Carga</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Detalhes</th>
+                      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Valor Apurado</th>
+                  </tr>
+              </thead>
+              <tbody id="print-tbody"></tbody>
+              <tfoot>
+                  <tr>
+                      <td colspan="4" style="padding: 15px 12px; text-align: right; font-weight: bold; border: none; font-size: 18px;">Valor Total da Quinzena:</td>
+                      <td style="padding: 15px 12px; font-weight: bold; border: none; text-align: left; font-size: 18px; color: #2e7d32;" id="print-valor-total">R$ 0.00</td>
+                  </tr>
+              </tfoot>
+          </table>
+      </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="desktop.js?v=7.0"></script>
+</body>
+</html>
