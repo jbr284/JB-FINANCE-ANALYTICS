@@ -1,0 +1,857 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, getDocs, getDoc, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCNHOPKa320_cY0KUY8vBVVYRmcYkmWo0Y",
+  authDomain: "bd-saripan.firebaseapp.com",
+  projectId: "bd-saripan",
+  storageBucket: "bd-saripan.firebasestorage.app",
+  messagingSenderId: "545578993360",
+  appId: "1:545578993360:web:d410a5cbedd914ad3800d5"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.db = db;
+window.registros = [];
+window.registrosModular = [];
+window.registrosExtra = [];
+window.chartsAtivos = [];
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const BENEFICIOS_FIXOS = 1225;
+
+// ==========================================
+// INICIALIZAÇÃO E PADRÕES
+// ==========================================
+window.carregarTodosOsDados = async () => {
+    try {
+        const snapSari = await getDocs(collection(db, "apontamentos"));
+        window.registros = snapSari.docs.map(d => d.data());
+        
+        const snapMod = await getDocs(collection(db, "renda_modular"));
+        window.registrosModular = snapMod.docs.map(d => d.data());
+
+        const snapExtra = await getDocs(collection(db, "renda_extra"));
+        window.registrosExtra = snapExtra.docs.map(d => d.data());
+
+        try {
+            const confSnap = await getDoc(doc(db, "configuracoes", "modular_base"));
+            if (confSnap.exists() && confSnap.data().salarioBase) {
+                const base = parseFloat(confSnap.data().salarioBase);
+                localStorage.setItem('modular_salario_base', base);
+                const inputBase = document.getElementById('configSalarioBase');
+                if (inputBase) inputBase.value = base;
+            }
+            
+            const padroesSnap = await getDoc(doc(db, "configuracoes", "modular_padroes"));
+            if (padroesSnap.exists()) {
+                const p = padroesSnap.data();
+                if(document.getElementById('calc-plano')) document.getElementById('calc-plano').value = p.plano || 'nenhum';
+                if(document.getElementById('calc-copart')) document.getElementById('calc-copart').value = p.copart || '';
+                if(document.getElementById('calc-emprestimo')) document.getElementById('calc-emprestimo').value = p.emprestimo || '';
+                if(document.getElementById('calc-sindicato')) document.getElementById('calc-sindicato').value = p.sindicato || 'nao';
+                if(document.getElementById('calc-vt')) document.getElementById('calc-vt').value = p.vt || 'sim';
+                if(document.getElementById('calc-dependentes')) document.getElementById('calc-dependentes').value = p.dependentes || '';
+            }
+        } catch (e) { console.log(e); }
+
+        await verificarEGerarAdiantamentoAutomatico();
+
+        window.renderizarApontamentosSaripan(); 
+        window.renderizarFinanceiroSaripan();
+        window.preencherFormularioModular();
+        window.renderizarHistoricoModular();
+        window.renderizarHistoricoExtra();
+        window.renderizarDashboardGeral();
+
+    } catch (e) { console.error(e); }
+};
+
+async function verificarEGerarAdiantamentoAutomatico() {
+    const baseVal = parseFloat(localStorage.getItem('modular_salario_base')) || 0;
+    if (baseVal <= 0) return; 
+    const hoje = new Date();
+    if (hoje.getDate() < 15) return; 
+
+    const ano = hoje.getFullYear();
+    const mes = hoje.getMonth(); 
+    const mesReal = mes + 1;
+    const idUnico = `MOD-${ano}-${mesReal}`;
+
+    const existe = window.registrosModular.find(r => r.id === idUnico);
+    if (!existe) {
+        const adiantamento = baseVal * 0.40;
+        const novoReg = {
+            id: idUnico, ano: ano, mes: mes,
+            salarioBase: baseVal, adiantamento: adiantamento,
+            salario: 0, outras: 0, nomeOutras: '',
+            beneficios: BENEFICIOS_FIXOS, totalRemunerativo: adiantamento, 
+            totalGeral: adiantamento + BENEFICIOS_FIXOS, geradoAutomaticamente: true
+        };
+        await setDoc(doc(db, "renda_modular", idUnico), novoReg);
+        window.registrosModular.push(novoReg);
+    }
+}
+
+// ==========================================
+// COMPARTILHAMENTO WHATSAPP (SARIPAN)
+// ==========================================
+window.compartilharRelatorio = async (chaveGrupo) => {
+    const [anoStr, mesStr, quinzenaStr] = chaveGrupo.split('-');
+    const ano = parseInt(anoStr); const mes = parseInt(mesStr); const quinzena = parseInt(quinzenaStr);
+    
+    const itens = window.registros.filter(r => r.ano === ano && r.mes === mes && r.quinzena === quinzena);
+    if (itens.length === 0) return alert("Nenhum registro para compartilhar.");
+    
+    itens.sort((a, b) => new Date(a.data) - new Date(b.data));
+
+    let texto = `*Relatório SARIPAN*\n🗓️ *${quinzena}ª Quinzena - ${MESES[mes]} ${ano}*\n\n`;
+    let totalDinheiro = 0; let qtdDiarias = 0;
+    let trs = '';
+
+    itens.forEach(item => {
+        const [, m, d] = item.data.split('-'); const dataFmt = `${d}/${m}`;
+        
+        let tipoStr = item.carga === 1 ? 'Normal' : (item.carga === 2 ? 'Dupla' : 'Tripla');
+        if (item.carga === 3 && item.justificativa) tipoStr += ` ---> ${item.justificativa}`;
+
+        const diaStr = item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Dom' : 'Fer');
+        
+        texto += `✅ ${dataFmt} - ${tipoStr} (${diaStr}) - R$ ${item.total.toFixed(2)}\n`;
+        totalDinheiro += item.total; qtdDiarias += item.multiplicador;
+
+        const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+        const dObj = new Date(item.data + 'T12:00:00'); const diaDaSemana = diasSemana[dObj.getDay()];
+
+        trs += `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">${dataFmt}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${diaDaSemana}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${tipoStr}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Domingo' : 'Feriado')}</td><td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #2e7d32;">R$ ${item.total.toFixed(2)}</td></tr>`;
+    });
+
+    texto += `\n📊 *Total de Diárias:* ${qtdDiarias}\n💰 *Valor Total:* R$ ${totalDinheiro.toFixed(2)}`;
+
+    document.getElementById('print-ref').innerText = `Referência: ${quinzena}ª Quinzena de ${MESES[mes]} ${ano}`;
+    document.getElementById('print-total-diarias').innerText = `Total: ${qtdDiarias} diárias a receber`;
+    document.getElementById('print-valor-total').innerText = `R$ ${totalDinheiro.toFixed(2)}`;
+    document.getElementById('print-tbody').innerHTML = trs;
+
+    window.mostrarToast("Gerando recibo em imagem...");
+    
+    try {
+        const printContainer = document.getElementById('print-container');
+        printContainer.style.top = '0'; printContainer.style.left = '0';
+        const canvas = await html2canvas(document.getElementById('print-template'), { scale: 2, useCORS: true });
+        printContainer.style.top = '-9999px'; printContainer.style.left = '-9999px';
+
+        canvas.toBlob(async (blob) => {
+            const file = new File([blob], `Relatorio_Saripan_${quinzena}Q_${MESES[mes]}_${ano}.png`, { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try { await navigator.share({ title: 'Relatório Saripan', text: texto, files: [file] }); } 
+                catch (e) { window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank'); }
+            } else {
+                const link = document.createElement('a'); link.download = file.name; link.href = URL.createObjectURL(blob); link.click();
+                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+            }
+        }, 'image/png');
+    } catch(err) { console.error(err); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank'); }
+};
+
+// ==========================================
+// MÓDULO MODULAR E GESTÃO
+// ==========================================
+window.salvarSalarioBase = async () => {
+    const base = parseFloat(document.getElementById('configSalarioBase').value) || 0;
+    if (base <= 0) return alert("Digite um valor válido para o Salário Base.");
+    try {
+        await setDoc(doc(db, "configuracoes", "modular_base"), { salarioBase: base }, { merge: true });
+        localStorage.setItem('modular_salario_base', base);
+        window.preencherFormularioModular();
+        window.mostrarToast("Salário Base salvo!");
+    } catch(e) { console.error(e); }
+};
+
+window.preencherFormularioModular = () => {
+    const mesStr = document.getElementById('mesModular').value;
+    if (!mesStr) return;
+    
+    const [anoStr, mesStrNum] = mesStr.split('-');
+    const idUnico = `MOD-${anoStr}-${parseInt(mesStrNum)}`;
+    const reg = window.registrosModular.find(r => r.id === idUnico);
+    const salarioBase = parseFloat(localStorage.getItem('modular_salario_base')) || 0;
+    const adiantCalculado = salarioBase * 0.40;
+
+    if (reg) {
+        document.getElementById('viewAdiantamento').value = `R$ ${(parseFloat(reg.adiantamento) || 0).toFixed(2)}`;
+        document.getElementById('inputSalarioLiquido').value = reg.salario > 0 ? reg.salario : '';
+        document.getElementById('inputExtras').value = reg.outras > 0 ? reg.outras : '';
+        document.getElementById('descExtras').value = reg.nomeOutras || '';
+    } else {
+        document.getElementById('viewAdiantamento').value = `R$ ${adiantCalculado.toFixed(2)}`;
+        document.getElementById('inputSalarioLiquido').value = '';
+        document.getElementById('inputExtras').value = '';
+        document.getElementById('descExtras').value = '';
+    }
+};
+
+window.salvarMesModular = async () => {
+    const mesStr = document.getElementById('mesModular').value;
+    if (!mesStr) return alert("Selecione o mês de referência.");
+
+    const [anoStr, mesStrNum] = mesStr.split('-');
+    const ano = parseInt(anoStr); const mes = parseInt(mesStrNum) - 1;
+    const ultimoDiaDoMes = new Date(ano, mes + 1, 0).getDate();
+    const diaLimite = Math.min(30, ultimoDiaDoMes);
+    
+    const dataLiberacao = new Date(ano, mes, diaLimite); dataLiberacao.setHours(0,0,0,0);
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+    if (hoje < dataLiberacao) {
+        return alert(`BLOQUEIO DE SISTEMA:\n\nOs valores de fechamento só podem entrar no sistema a partir do dia ${diaLimite} do mês de referência (${MESES[mes]}/${ano}).\n\nO cálculo no simulador está liberado para conferência.`);
+    }
+
+    const salarioBase = parseFloat(localStorage.getItem('modular_salario_base')) || 0;
+    if (salarioBase <= 0) return alert("Configure o Salário Base primeiro!");
+
+    const idUnico = `MOD-${ano}-${mes + 1}`;
+    const adiantamentoStr = document.getElementById('viewAdiantamento').value.replace('R$', '').trim();
+    const adiantamento = parseFloat(adiantamentoStr) || (salarioBase * 0.40);
+    const salarioLiq = parseFloat(document.getElementById('inputSalarioLiquido').value) || 0;
+    const extras = parseFloat(document.getElementById('inputExtras').value) || 0;
+    const descExtras = document.getElementById('descExtras').value || '';
+
+    const totalRemunerativo = adiantamento + salarioLiq + extras;
+    const totalGeral = totalRemunerativo + BENEFICIOS_FIXOS;
+
+    const novoReg = {
+        id: idUnico, ano: ano, mes: mes, salarioBase: salarioBase, adiantamento: adiantamento,
+        salario: salarioLiq, outras: extras, nomeOutras: descExtras,
+        beneficios: BENEFICIOS_FIXOS, totalRemunerativo: totalRemunerativo, totalGeral: totalGeral, geradoAutomaticamente: false
+    };
+
+    try {
+        await setDoc(doc(db, "renda_modular", idUnico), novoReg, { merge: true });
+        window.registrosModular = window.registrosModular.filter(r => r.id !== idUnico);
+        window.registrosModular.push(novoReg);
+        window.renderizarHistoricoModular();
+        window.renderizarDashboardGeral();
+        window.mostrarToast("Mês registrado com sucesso!");
+    } catch(e) { console.error(e); }
+};
+
+window.excluirRegistroModular = async (id) => {
+    if (!confirm("Excluir este registo do Modular?")) return;
+    try {
+        await deleteDoc(doc(db, "renda_modular", id));
+        window.registrosModular = window.registrosModular.filter(r => r.id !== id);
+        window.renderizarHistoricoModular(); window.renderizarDashboardGeral();
+    } catch(e) { console.error(e); }
+};
+
+window.renderizarHistoricoModular = () => {
+    const container = document.getElementById('lista-modular-container');
+    if(!container) return; container.innerHTML = "";
+    
+    const regs = [...window.registrosModular].sort((a, b) => a.ano !== b.ano ? b.ano - a.ano : b.mes - a.mes);
+    if (regs.length === 0) { container.innerHTML = "<p style='text-align:center;'>Sem dados.</p>"; return; }
+    
+    let tableHtml = `<div style="overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #cfd8dc;">
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse; text-align: center;">
+        <thead>
+            <tr style="background: #e3f2fd; border-bottom: 2px solid #90caf9;">
+                <th style="padding: 15px 10px; text-align: left;">Mês/Ano</th><th style="padding: 15px 10px;">Adiant.</th><th style="padding: 15px 10px;">Sal. Líq.</th><th style="padding: 15px 10px; color:#2e7d32;">Benef.</th><th style="padding: 15px 10px;">Extras</th><th style="padding: 15px 10px; background: #bbdefb;">Total Rem.</th><th style="padding: 15px 10px; background: #c8e6c9;">T. Rem + Ben</th><th></th>
+            </tr>
+        </thead><tbody>`;
+        
+    regs.forEach(r => { 
+        const adiantamento = parseFloat(r.adiantamento) || 0; const salario = parseFloat(r.salario) || 0; const outras = parseFloat(r.outras) || 0;
+        const beneficios = parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225;
+        const tr = parseFloat(r.totalRemunerativo) || parseFloat(r.total) || (adiantamento + salario + outras);
+        const tg = parseFloat(r.totalGeral) || (tr + beneficios);
+
+        tableHtml += `
+            <tr style="border-bottom: 1px solid #eceff1;">
+                <td style="padding: 12px 10px; text-align: left; font-weight: bold; color: #455a64;">${MESES[r.mes]} ${r.ano}</td>
+                <td class="esconder-valor" style="padding: 12px 10px;">R$ ${adiantamento.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 12px 10px;">R$ ${salario.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 12px 10px; color:#2e7d32; font-style: italic;">R$ ${beneficios.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 12px 10px;" title="${r.nomeOutras || ''}">R$ ${outras.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 12px 10px; background: #e3f2fd; font-weight: bold; color: #1565c0;">R$ ${tr.toFixed(2)}</td>
+                <td class="esconder-valor" style="padding: 12px 10px; background: #e8f5e9; font-weight: bold; color: #1b5e20;">R$ ${tg.toFixed(2)}</td>
+                <td style="padding: 12px 10px;"><span style="color:red; cursor:pointer; font-size:16px;" onclick="window.excluirRegistroModular('${r.id}')">✖</span></td>
+            </tr>`; 
+    });
+    tableHtml += `</tbody></table></div>`;
+    container.innerHTML = tableHtml;
+};
+
+// ==========================================
+// VISÃO GERAL E DASHBOARD
+// ==========================================
+window.renderizarDashboardGeral = () => {
+    const container = document.getElementById('dashboard-geral-content');
+    if(!container) return;
+    
+    const dadosGerais = {}; let anosEncontrados = new Set();
+    const initData = (ano, mes) => {
+        const k = `${ano}-${mes}`; anosEncontrados.add(ano);
+        if(!dadosGerais[k]) dadosGerais[k] = { ano: ano, mes: mes, saripan: 0, modularRem: 0, modularBen: 0, extra: 0 };
+        return k;
+    };
+
+    window.registros.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].saripan += parseFloat(r.total) || 0; });
+    window.registrosModular.forEach(r => { 
+        const k = initData(r.ano, r.mes); 
+        dadosGerais[k].modularRem += parseFloat(r.totalRemunerativo) || parseFloat(r.total) || 0;
+        dadosGerais[k].modularBen += parseFloat(r.beneficios) || parseFloat(r.totalBeneficios) || 1225; 
+    });
+    window.registrosExtra.forEach(r => { const k = initData(r.ano, r.mes); dadosGerais[k].extra += parseFloat(r.total) || 0; });
+
+    const anosOrdenados = Array.from(anosEncontrados).sort((a,b) => b-a);
+    if(anosOrdenados.length === 0) { container.innerHTML = "<p style='text-align:center;'>Sem dados.</p>"; return; }
+    
+    let htmlFinal = '';
+    anosOrdenados.forEach(ano => {
+        const mesesDoAno = Object.values(dadosGerais).filter(d => d.ano === ano).sort((a,b) => a.mes - b.mes);
+        let totalAcumuladoAno = 0; const labels = [], dataSari = [], dataModRem = [], dataBen = [], dataExtra = [];
+        let htmlTabelaCorpo = '';
+
+        mesesDoAno.forEach(m => {
+            labels.push(MESES[m.mes].substring(0,3)); 
+            dataSari.push(m.saripan); dataModRem.push(m.modularRem); dataBen.push(m.modularBen); dataExtra.push(m.extra);
+            const totalMes = m.saripan + m.modularRem + m.modularBen + m.extra;
+            totalAcumuladoAno += totalMes;
+            htmlTabelaCorpo += `
+                <tr>
+                    <td style="padding: 12px; font-weight: bold; color: #455a64; text-align: left;">${MESES[m.mes]}</td>
+                    <td class="esconder-valor" style="padding: 12px; text-align: right;">R$ ${m.modularRem.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 12px; text-align: right;">R$ ${m.modularBen.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 12px; text-align: right;">R$ ${m.saripan.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 12px; text-align: right;">R$ ${m.extra.toFixed(2)}</td>
+                    <td class="esconder-valor" style="padding: 12px; text-align: right; background: #e8f5e9; font-weight: bold; color: #1b5e20;">R$ ${totalMes.toFixed(2)}</td>
+                </tr>`;
+        });
+        
+        const media = mesesDoAno.length > 0 ? (totalAcumuladoAno / mesesDoAno.length) : 0;
+        
+        htmlFinal += `<div style="margin-bottom: 40px; background: white; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h4 style="color: #0a192f; font-size: 18px; margin-top:0; border-bottom: 2px solid #ddd; padding-bottom: 10px;">ANÁLISE FINANCEIRA ${ano}</h4>
+            <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                <div class="year-summary" style="flex: 1; border-color: #ffcc80;"><h4>RENDIMENTO TOTAL</h4><div class="year-total-value esconder-valor" style="color: #e65100;">${totalAcumuladoAno.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div></div>
+                <div class="year-summary" style="flex: 1; background: #e3f2fd; border-color: #90caf9;"><h4>MÉDIA MENSAL</h4><div class="year-total-value esconder-valor" style="color: #0d47a1;">${media.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</div></div>
+            </div>
+            <div class="chart-container" style="height: 300px;"><canvas id="grafico-geral-${ano}" class="esconder-valor"></canvas></div>
+            <div style="overflow-x: auto; border-radius: 8px; border: 1px solid #cfd8dc;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead><tr style="background: #e3f2fd; border-bottom: 2px solid #90caf9; text-align: right;"><th style="text-align: left;">Mês</th><th>Mod. Rem.</th><th>Benefícios</th><th>Saripan</th><th>Extras</th><th style="background: #c8e6c9; color: #1b5e20;">Total do Mês</th></tr></thead>
+                    <tbody>${htmlTabelaCorpo}</tbody>
+                </table>
+            </div>
+        </div>`;
+
+        setTimeout(() => {
+            const ctx = document.getElementById(`grafico-geral-${ano}`);
+            if(ctx) {
+                const chart = new Chart(ctx, { 
+                    type: 'bar', data: { labels: labels, datasets: [ 
+                        { label: 'Mod (Líquido+Adiant)', data: dataModRem, backgroundColor: '#1565c0' }, { label: 'Mod (Benefícios)', data: dataBen, backgroundColor: '#4dd0e1' }, 
+                        { label: 'Saripan', data: dataSari, backgroundColor: '#43a047' }, { label: 'Extras', data: dataExtra, backgroundColor: '#fbc02d' }
+                    ]}, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } } 
+                });
+                if (!window.chartsAtivos) window.chartsAtivos = []; window.chartsAtivos.push(chart);
+            }
+        }, 100);
+    });
+    container.innerHTML = htmlFinal;
+};
+
+// ==========================================
+// MÓDULO EXTRA E AUDITORIA SARIPAN (Desktop)
+// ==========================================
+window.adicionarRegistroExtra = async () => {
+    const d = document.getElementById('dataExtra').value;
+    const desc = document.getElementById('descExtra').value.trim() || 'Renda Extra';
+    const valor = parseFloat(document.getElementById('valorExtra').value);
+    if (!d || isNaN(valor) || valor <= 0) return alert("Preencha a data e um valor válido.");
+    
+    const dateObj = new Date(d); const p = { ano: dateObj.getUTCFullYear(), mes: dateObj.getUTCMonth() };
+    const idUnico = `EXT-${Date.now()}`;
+    const novoReg = { id: idUnico, data: d, ano: p.ano, mes: p.mes, descricao: desc, total: valor };
+    try {
+        await setDoc(doc(db, "renda_extra", idUnico), novoReg);
+        window.registrosExtra.push(novoReg);
+        window.renderizarHistoricoExtra(); window.renderizarDashboardGeral(); window.mostrarToast("Renda Extra registrada!");
+    } catch(e) { console.error(e); }
+};
+
+window.excluirRegistroExtra = async (id) => { 
+    if (!confirm("Deseja excluir esta Renda Extra?")) return;
+    try {
+        await deleteDoc(doc(db, "renda_extra", id));
+        window.registrosExtra = window.registrosExtra.filter(r => r.id !== id);
+        window.renderizarHistoricoExtra(); window.renderizarDashboardGeral();
+    } catch(e) { console.error(e); }
+};
+
+window.renderizarHistoricoExtra = () => {
+    const container = document.getElementById('lista-extra-container');
+    if(!container) return; container.innerHTML = "";
+    const regs = [...window.registrosExtra].sort((a, b) => new Date(b.data) - new Date(a.data));
+    if (regs.length === 0) { container.innerHTML = "<p style='text-align:center; font-size:14px; color:#999;'>Nenhuma renda extra registrada ainda.</p>"; return; }
+    
+    let htmlRows = regs.map(r => {
+        const dataFmt = r.data.split('-').reverse().join('/');
+        return `<tr><td style="padding: 12px;">${dataFmt}</td><td style="padding: 12px;">${r.descricao}</td><td class="td-valor esconder-valor" style="color:#f57c00; font-weight:bold; padding: 12px;">R$ ${r.total.toFixed(2)}</td><td style="padding: 12px; text-align:center;"><span style="color:red; cursor:pointer;" onclick="window.excluirRegistroExtra('${r.id}')">✖</span></td></tr>`;
+    }).join('');
+    container.innerHTML = `<div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;"><table style="width:100%; border-collapse:collapse; font-size: 14px;"><tbody>${htmlRows}</tbody></table></div>`;
+};
+
+// Funções Exclusivas de Exclusão (Desktop audita)
+window.excluirRegistro = async (id) => {
+    if (!confirm("Deseja realmente excluir este apontamento?")) return;
+    try {
+        await deleteDoc(doc(db, "apontamentos", id.toString()));
+        window.registros = window.registros.filter(r => r.id.toString() !== id.toString());
+        window.renderizarApontamentosSaripan(); window.renderizarFinanceiroSaripan(); window.renderizarDashboardGeral();
+    } catch (e) { console.error(e); alert("Erro ao excluir!"); }
+};
+
+window.excluirQuinzena = async (chaveGrupo) => {
+    if (!confirm("ATENÇÃO: Deseja realmente excluir TODOS os registros desta quinzena?")) return;
+    const [anoStr, mesStr, quinzenaStr] = chaveGrupo.split('-');
+    const ano = parseInt(anoStr); const mes = parseInt(mesStr); const quinzena = parseInt(quinzenaStr);
+    const itensParaExcluir = window.registros.filter(r => r.ano === ano && r.mes === mes && r.quinzena === quinzena);
+
+    try {
+        for (const item of itensParaExcluir) { await deleteDoc(doc(db, "apontamentos", item.id.toString())); }
+        window.registros = window.registros.filter(r => !(r.ano === ano && r.mes === mes && r.quinzena === quinzena));
+        window.renderizarApontamentosSaripan(); window.renderizarFinanceiroSaripan(); window.renderizarDashboardGeral();
+        window.mostrarToast("Quinzena inteira excluída!");
+    } catch (e) { console.error(e); alert("Erro ao excluir quinzena"); }
+};
+
+window.renderizarApontamentosSaripan = () => {
+    const container = document.getElementById('lista-quinzenas-container');
+    if(!container) return; container.innerHTML = "";
+    const msgVazia = document.getElementById('msg-sem-dados');
+    if (window.registros.length === 0) { if(msgVazia) msgVazia.style.display = 'block'; return; }
+    if(msgVazia) msgVazia.style.display = 'none';
+
+    const grupos = {};
+    window.registros.forEach(reg => {
+        const chave = `${reg.ano}-${reg.mes}-${reg.quinzena}`;
+        if (!grupos[chave]) { grupos[chave] = { ano: reg.ano, mes: reg.mes, quinzena: reg.quinzena, itens: [], totalValor: 0 }; }
+        grupos[chave].itens.push(reg); grupos[chave].totalValor += reg.total;
+    });
+
+    const chavesOrdenadas = Object.keys(grupos).sort((a, b) => {
+        const [anoA, mesA, qA] = a.split('-').map(Number); const [anoB, mesB, qB] = b.split('-').map(Number);
+        if (anoA !== anoB) return anoB - anoA; if (mesA !== mesB) return mesB - mesA; return qB - qA;
+    });
+
+    chavesOrdenadas.forEach((chave, index) => {
+        const grupo = grupos[chave];
+        grupo.itens.sort((a, b) => new Date(a.data) - new Date(b.data));
+        const isPrimeiro = index === 0; const activeClass = isPrimeiro ? 'active' : ''; const openClass = isPrimeiro ? 'open' : '';
+        const totalFormatado = grupo.totalValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        let htmlRows = '';
+        grupo.itens.forEach(item => {
+            const [, mes, dia] = item.data.split('-'); const dataFmt = `${dia}/${mes}`;
+            
+            let tipoStr = item.carga === 1 ? 'Normal' : (item.carga === 2 ? 'Dupla' : 'Tripla');
+            if (item.carga === 3 && item.justificativa) tipoStr += ` ---> ${item.justificativa}`;
+
+            const diaStr = item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Dom' : 'Fer');
+            const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+            const diaDaSemana = diasSemana[new Date(item.data + 'T12:00:00').getDay()];
+
+            htmlRows += `<tr><td>${dataFmt}</td><td>${diaDaSemana}</td><td>${tipoStr}</td><td>${diaStr}</td><td class="td-valor esconder-valor">R$ ${item.total.toFixed(2)}</td><td style="text-align:center;"><span style="color:red; cursor:pointer;" onclick="window.excluirRegistro('${item.id}')">✖</span></td></tr>`;
+        });
+
+        const btnWhatsApp = `<button class="btn-action btn-green" style="padding: 6px 12px; font-size: 12px; margin-right: 10px;" onclick="event.stopPropagation(); window.compartilharRelatorio('${chave}')">Compartilhar no WhatsApp</button>`;
+        const btnExcluirGrupo = `<button style="background: none; border:none; color:#c62828; font-size: 18px; cursor:pointer;" onclick="event.stopPropagation(); window.excluirQuinzena('${chave}')">🗑️</button>`;
+
+        const div = document.createElement('div');
+        div.className = 'accordion-group';
+        div.innerHTML = `
+            <div class="accordion-header ${activeClass}" onclick="this.classList.toggle('active'); this.nextElementSibling.classList.toggle('open');">
+                <div><div class="accordion-title">${grupo.quinzena}ª Quinzena - ${MESES[grupo.mes]} ${grupo.ano}</div><div class="accordion-meta">${grupo.itens.length} registros computados</div></div>
+                <div style="display:flex; align-items:center;">${btnWhatsApp} ${btnExcluirGrupo}</div>
+            </div>
+            <div class="accordion-content ${openClass}">
+                <table><thead><tr><th>Data</th><th>Dia</th><th>Tipo</th><th>Detalhes</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+                <tbody>${htmlRows}<tr class="total-row"><td colspan="4" style="text-align:right;">TOTAL DA QUINZENA</td><td class="td-valor esconder-valor">${totalFormatado}</td><td></td></tr></tbody></table>
+            </div>`;
+        container.appendChild(div);
+    });
+};
+
+window.renderizarFinanceiroSaripan = () => {
+    const container = document.getElementById('financeiro-content');
+    if(!container) return;
+
+    const dadosPorMes = {}; const totaisAnuais = {};
+
+    window.registros.forEach(reg => {
+        const chaveMes = `${reg.ano}-${reg.mes}`;
+        if (!dadosPorMes[chaveMes]) { dadosPorMes[chaveMes] = { ano: reg.ano, mes: reg.mes, totalQ1: 0, totalQ2: 0 }; }
+        if (reg.quinzena === 1) { dadosPorMes[chaveMes].totalQ1 += reg.total; } else { dadosPorMes[chaveMes].totalQ2 += reg.total; }
+        if (!totaisAnuais[reg.ano]) totaisAnuais[reg.ano] = 0; totaisAnuais[reg.ano] += reg.total;
+    });
+
+    const chavesOrdenadasMes = Object.keys(dadosPorMes).sort((a, b) => {
+        const [anoA, mesA] = a.split('-').map(Number); const [anoB, mesB] = b.split('-').map(Number);
+        if (anoA !== anoB) return anoB - anoA; return mesB - mesA;
+    });
+
+    const anosOrdenados = Object.keys(totaisAnuais).sort((a,b) => b-a);
+    if (chavesOrdenadasMes.length === 0) { container.innerHTML = "<p style='text-align:center; padding: 20px; color:#999;'>Sem dados financeiros.</p>"; return; }
+
+    let htmlFinal = '';
+    const hoje = new Date(); const anoAtual = hoje.getFullYear(); const mesAtual = hoje.getMonth(); const diaAtual = hoje.getDate();
+
+    anosOrdenados.forEach(anoStr => {
+        const ano = parseInt(anoStr); const chavesDesteAno = chavesOrdenadasMes.filter(k => k.startsWith(`${ano}-`));
+        let totalAcumuladoDoAno = 0; let totalMesesFechados = 0; let qtdMesesFechados = 0;
+        const labels = []; const dadosQ1 = []; const dadosQ2 = []; const dadosTotalMes = [];
+        let htmlTabelaCorpo = '';
+
+        chavesDesteAno.forEach(k => {
+            const d = dadosPorMes[k]; const totalMes = d.totalQ1 + d.totalQ2;
+            totalAcumuladoDoAno += totalMes;
+            if (d.ano < anoAtual || (d.ano === anoAtual && d.mes < mesAtual)) { totalMesesFechados += totalMes; qtdMesesFechados++; }
+            labels.push(MESES[d.mes].substring(0, 3)); dadosQ1.push(d.totalQ1); dadosQ2.push(d.totalQ2); dadosTotalMes.push(totalMes);
+
+            htmlTabelaCorpo += `<tr><td>${MESES[d.mes]}</td><td style="text-align:right" class="esconder-valor">R$ ${d.totalQ1.toFixed(2)}</td><td style="text-align:right" class="esconder-valor">R$ ${d.totalQ2.toFixed(2)}</td><td style="text-align:right" class="total-row esconder-valor">R$ ${totalMes.toFixed(2)}</td></tr>`;
+        });
+
+        const mediaParcialFechada = qtdMesesFechados > 0 ? (totalMesesFechados / qtdMesesFechados) : 0;
+        let divisorProporcional = chavesDesteAno.length;
+        if (ano === anoAtual) { divisorProporcional = mesAtual + (diaAtual / 30); }
+        const mediaTotalProporcional = divisorProporcional > 0 ? (totalAcumuladoDoAno / divisorProporcional) : 0;
+
+        htmlFinal += `<div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); margin-bottom: 30px;">
+            <h4 style="margin-top: 0; color: #0a192f; border-bottom: 2px solid #ddd; padding-bottom: 10px; font-size: 18px;">Resumo Executivo Saripan ${ano}</h4>
+            <div style="display: flex; gap: 20px; margin-bottom: 25px; margin-top: 20px;">
+                <div class="year-summary" style="flex: 1; padding: 20px;"><h4>RENDIMENTO ANUAL</h4><div class="year-total-value esconder-valor" style="color: #2e7d32;">${totalAcumuladoDoAno.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</div></div>
+                <div class="year-summary" style="flex: 1.5; padding: 20px; background: #e3f2fd; border-color: #90caf9;"><h4>Média Salarial</h4>
+                    <div style="display: flex; justify-content: space-around; font-size: 14px; color: #0d47a1; margin-top: 15px;">
+                        <div><span style="font-size: 12px; font-weight: bold;">PARCIAL</span><br><strong class="esconder-valor" style="font-size: 18px;">${mediaParcialFechada.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</strong></div>
+                        <div style="width: 2px; background: #bbdefb; margin: 0 10px;"></div>
+                        <div><span style="font-size: 12px; font-weight: bold;">TOTAL</span><br><strong class="esconder-valor" style="font-size: 18px;">${mediaTotalProporcional.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</strong></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+              <div class="chart-container" style="margin-bottom: 0;">
+                  <h5 style="margin-top:0; text-align: center; color: #333;">Consolidado Mensal</h5>
+                  <div style="position: relative; height: 250px; width: 100%;"><canvas id="grafico-sari-bar-${ano}" class="esconder-valor"></canvas></div>
+              </div>
+              <div class="chart-container" style="margin-bottom: 0;">
+                  <h5 style="margin-top:0; text-align: center; color: #333;">1ª vs 2ª Quinzena</h5>
+                  <div style="position: relative; height: 250px; width: 100%;"><canvas id="grafico-sari-line-${ano}" class="esconder-valor"></canvas></div>
+              </div>
+            </div>
+
+            <table style="width: 100%;"><thead><tr><th>Mês de Referência</th><th style="text-align:right">1ª Quinzena</th><th style="text-align:right">2ª Quinzena</th><th style="text-align:right; background:#002f6c; color:white;">Balanço Total</th></tr></thead><tbody>${htmlTabelaCorpo}</tbody></table>
+        </div>`;
+
+        setTimeout(() => {
+            const ctxBar = document.getElementById(`grafico-sari-bar-${ano}`);
+            if (ctxBar) {
+                const chartBar = new Chart(ctxBar, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Rendimento Mensal Total', data: dadosTotalMes, backgroundColor: '#1b5e20', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+                if (!window.chartsAtivos) window.chartsAtivos = []; window.chartsAtivos.push(chartBar);
+            }
+            const ctxLine = document.getElementById(`grafico-sari-line-${ano}`);
+            if (ctxLine) {
+                const chartLine = new Chart(ctxLine, { type: 'line', data: { labels: labels, datasets: [{ label: '1ª Quinzena', data: dadosQ1, borderColor: '#81c784', backgroundColor: 'rgba(129, 199, 132, 0.1)', fill: true, tension: 0.4 }, { label: '2ª Quinzena', data: dadosQ2, borderColor: '#2e7d32', backgroundColor: 'rgba(46, 125, 50, 0.1)', fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+                if (!window.chartsAtivos) window.chartsAtivos = []; window.chartsAtivos.push(chartLine);
+            }
+        }, 100);
+    });
+    container.innerHTML = htmlFinal;
+};
+
+// ==========================================
+// MOTOR DA CALCULADORA CIRÚRGICA DE DESKTOP
+// ==========================================
+const regrasCirurgicas = {
+    tetoINSS: 8475.55, percentualAdiantamento: 0.4, percentualAdicionalNoturno: 0.35,
+    descontoFixoVA: 23.97, percentualVT: 0.06, valorSindicato: 50.00, deducaoPorDependenteIRRF: 189.59,
+    tabelaINSS: [ { ate: 1621.00, aliquota: 0.075, deduzir: 0 }, { ate: 2902.84, aliquota: 0.09, deduzir: 24.32 }, { ate: 4354.27, aliquota: 0.12, deduzir: 111.40 }, { ate: 8475.55, aliquota: 0.14, deduzir: 198.49 } ],
+    tabelaIRRF: [ { ate: 2428.80, aliquota: 0, deduzir: 0 }, { ate: 2826.65, aliquota: 0.075, deduzir: 182.16 }, { ate: 3751.05, aliquota: 0.15, deduzir: 394.16 }, { ate: 4664.68, aliquota: 0.225, deduzir: 675.49 }, { ate: "acima", aliquota: 0.275, deduzir: 908.73 } ],
+    planosSESI: { nenhum: 0, basico_individual: 29, basico_familiar: 58, plus_individual: 120, plus_familiar: 189 }
+};
+
+window.converterParaDecimal = (valor) => {
+    if (!valor) return '';
+    valor = valor.toString().toLowerCase().trim().replace(',', '.');
+    if (valor.includes('h') || valor.includes(':')) {
+        const partes = valor.split(/[h:]/);
+        const horas = parseFloat(partes[0]) || 0;
+        const minutos = parseFloat(partes[1]) || 0;
+        return (horas + (minutos / 60)).toFixed(2);
+    }
+    const num = parseFloat(valor);
+    return isNaN(num) ? '' : num.toFixed(2);
+};
+
+window.alternarModoFerias = () => {
+    const modo = document.getElementById('calc-tipo-mes').value;
+    const box = document.getElementById('box-ferias');
+    const colQtd = document.getElementById('col-qtd-ferias');
+    const lblData = document.getElementById('lbl-data-ferias');
+    const diasTrabInput = document.getElementById('calc-dias-trab');
+
+    if (modo === 'completo') { box.classList.add('hidden'); diasTrabInput.value = 30; } 
+    else {
+        box.classList.remove('hidden');
+        if (modo === 'retorno_ferias') { colQtd.classList.add('hidden'); lblData.textContent = "Dia do Retorno:"; } 
+        else { colQtd.classList.remove('hidden'); lblData.textContent = "Dia de Saída:"; }
+        window.calcularDiasProporcionaisFerias();
+    }
+};
+
+window.calcularDiasProporcionaisFerias = () => {
+    const mesRefStr = document.getElementById('calc-mes-ref').value;
+    const modo = document.getElementById('calc-tipo-mes').value;
+    const diaSelecionado = parseInt(document.getElementById('calc-dia-ferias').value);
+    const diasTrabInput = document.getElementById('calc-dias-trab');
+
+    if (modo === 'completo') { diasTrabInput.value = 30; return; }
+    if (!mesRefStr || isNaN(diaSelecionado)) { diasTrabInput.value = 0; return; }
+
+    const [anoRef, mesRef] = mesRefStr.split('-').map(Number);
+    const fimMes = new Date(anoRef, mesRef, 0);
+    const diaValidado = Math.min(diaSelecionado, fimMes.getDate());
+    let diasTrabalhados = 0;
+
+    if (modo === 'saida_ferias') {
+        const duracao = parseInt(document.getElementById('calc-qtd-ferias').value);
+        if(isNaN(duracao)) { diasTrabInput.value = 0; return; }
+
+        const dataInicioFerias = new Date(anoRef, mesRef - 1, diaValidado);
+        const dataFimFerias = new Date(dataInicioFerias);
+        dataFimFerias.setDate(dataFimFerias.getDate() + duracao - 1);
+        
+        if (dataFimFerias <= fimMes) { const diasFeriasNoMes = Math.ceil((dataFimFerias - dataInicioFerias)/(1000*60*60*24)) + 1; diasTrabalhados = 30 - diasFeriasNoMes; } 
+        else { diasTrabalhados = diaValidado - 1; }
+    } else if (modo === 'retorno_ferias') {
+        const diasPerdidos = diaValidado - 1; diasTrabalhados = 30 - diasPerdidos;
+    }
+    diasTrabInput.value = Math.max(0, Math.min(30, diasTrabalhados));
+};
+
+window.atualizarCalendarioCirurgico = () => {
+    const mesStr = document.getElementById('calc-mes-ref').value;
+    if (!mesStr) return;
+    const [ano, mes] = mesStr.split('-').map(Number);
+    const extrasStr = document.getElementById('calc-feriados-extras').value;
+    const extrasArray = extrasStr ? extrasStr.split(',').map(d => d.trim()) : [];
+    const diasNoMes = new Date(ano, mes, 0).getDate();
+
+    const a = ano % 19; const b = Math.floor(ano / 100); const c = ano % 100;
+    const d = Math.floor(b / 4); const e = b % 4; const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3); const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4); const k = c % 4; const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const mesPascoa = Math.floor((h + l - 7 * m + 114) / 31);
+    const diaPascoa = ((h + l - 7 * m + 114) % 31) + 1;
+
+    const pascoa = new Date(ano, mesPascoa - 1, diaPascoa);
+    const sextaSanta = new Date(pascoa); sextaSanta.setDate(pascoa.getDate() - 2);
+    const carnaval = new Date(pascoa); carnaval.setDate(pascoa.getDate() - 47);
+    const corpusChristi = new Date(pascoa); corpusChristi.setDate(pascoa.getDate() + 60);
+
+    const formatarDDMM = (dt) => String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0');
+    const feriadosMoveis = [formatarDDMM(sextaSanta), formatarDDMM(carnaval), formatarDDMM(corpusChristi)];
+    const feriadosFixos = ["01/01", "21/04", "01/05", "07/09", "12/10", "02/11", "15/11", "25/12"];
+
+    let diasUteis = 0; let domFeriados = 0;
+    for (let dia = 1; dia <= diasNoMes; dia++) {
+        const dataAtual = new Date(ano, mes - 1, dia); const diaSemana = dataAtual.getDay();
+        const dataStr = String(dia).padStart(2, '0') + '/' + String(mes).padStart(2, '0');
+        if (diaSemana === 0 || feriadosFixos.includes(dataStr) || feriadosMoveis.includes(dataStr) || extrasArray.includes(dataStr)) { domFeriados++; } else { diasUteis++; }
+    }
+    document.getElementById('calc-diasuteis').value = diasUteis; document.getElementById('calc-domferiados').value = domFeriados; document.getElementById('calc-dias').value = diasNoMes;
+    window.calcularDiasProporcionaisFerias();
+};
+
+window.memorizarPadroesCalculadora = async () => {
+    const padroes = { plano: document.getElementById('calc-plano').value, copart: document.getElementById('calc-copart').value, emprestimo: document.getElementById('calc-emprestimo').value, sindicato: document.getElementById('calc-sindicato').value, vt: document.getElementById('calc-vt').value, dependentes: document.getElementById('calc-dependentes').value };
+    try { await setDoc(doc(db, "configuracoes", "modular_padroes"), padroes); window.mostrarToast("Descontos padrão memorizados!"); } catch(e) { console.error(e); }
+};
+
+window.calcularEInjetarModularCirurgico = () => {
+    const salarioBase = parseFloat(localStorage.getItem('modular_salario_base')) || 0;
+    if (salarioBase <= 0) return alert("Configure e Salve o Salário Base Contratual na aba Fechamento primeiro!");
+
+    const diasUteis = parseFloat(document.getElementById('calc-diasuteis').value) || 0;
+    const domFeriados = parseFloat(document.getElementById('calc-domferiados').value) || 0;
+
+    if (diasUteis === 0 && domFeriados === 0) return alert("Selecione o Mês da Folha no calendário para gerar os Dias Úteis e Feriados!");
+
+    const diasTrab = parseFloat(document.getElementById('calc-dias-trab').value) || 30; 
+    const dependentes = parseFloat(document.getElementById('calc-dependentes').value) || 0;
+    const faltas = parseFloat(document.getElementById('calc-faltas').value) || 0;
+    const atrasos = parseFloat(document.getElementById('calc-atrasos').value) || 0;
+    const he50 = parseFloat(document.getElementById('calc-he50').value) || 0;
+    const he60 = parseFloat(document.getElementById('calc-he60').value) || 0;
+    const he80 = parseFloat(document.getElementById('calc-he80').value) || 0;
+    const he100 = parseFloat(document.getElementById('calc-he100').value) || 0;
+    const he150 = parseFloat(document.getElementById('calc-he150').value) || 0;
+    const noturno = parseFloat(document.getElementById('calc-noturno').value) || 0;
+    
+    const plano = document.getElementById('calc-plano').value;
+    const coparticipacao = parseFloat(document.getElementById('calc-copart').value) || 0;
+    const sindicato = document.getElementById('calc-sindicato').value;
+    const emprestimo = parseFloat(document.getElementById('calc-emprestimo').value) || 0;
+    const descontarVT = document.getElementById('calc-vt').value === 'sim';
+
+    const valorDia = salarioBase / 30; const valorHora = salarioBase / 220;
+    const vencBase = (salarioBase / 30) * diasTrab; 
+    
+    const valorHE50 = he50 * valorHora * 1.5; const valorHE60 = he60 * valorHora * 1.6; const valorHE80 = he80 * valorHora * 1.8;
+    const valorHE100 = he100 * valorHora * 2.0; const valorHE150 = he150 * valorHora * 2.5;
+    const valorNoturno = noturno * valorHora * regrasCirurgicas.percentualAdicionalNoturno;
+    
+    const totalHE = valorHE50 + valorHE60 + valorHE80 + valorHE100 + valorHE150;
+    const dsrHE = (diasUteis > 0) ? (totalHE / diasUteis) * domFeriados : 0;
+    const dsrNoturno = (diasUteis > 0) ? (valorNoturno / diasUteis) * domFeriados : 0;
+    
+    const totalBruto = vencBase + totalHE + valorNoturno + dsrHE + dsrNoturno;
+
+    const descontoFaltas = faltas * valorDia; const descontoAtrasos = atrasos * valorHora;
+    const adiantamento = (salarioBase / 30) * diasTrab * regrasCirurgicas.percentualAdiantamento;
+    const descontoVA = regrasCirurgicas.descontoFixoVA; const descontoVT = descontarVT ? (salarioBase * regrasCirurgicas.percentualVT) : 0;
+    
+    const baseINSS = totalBruto - descontoFaltas - descontoAtrasos;
+    let inss = 0; let baseTemp = baseINSS > regrasCirurgicas.tetoINSS ? regrasCirurgicas.tetoINSS : baseINSS;
+    for (const faixa of regrasCirurgicas.tabelaINSS) { if (baseTemp <= faixa.ate) { inss = (baseTemp * faixa.aliquota) - faixa.deduzir; break; } }
+    if (inss === 0) { const ultima = regrasCirurgicas.tabelaINSS[regrasCirurgicas.tabelaINSS.length - 1]; inss = (baseTemp * ultima.aliquota) - ultima.deduzir; }
+
+    const baseIRRF = baseINSS - inss;
+    let irrf = 0;
+    if (totalBruto > 5000) { 
+        const deducoesDependentes = dependentes * regrasCirurgicas.deducaoPorDependenteIRRF;
+        const baseFinal = Math.max(0, baseIRRF - deducoesDependentes);
+        for (const faixa of regrasCirurgicas.tabelaIRRF) { if (faixa.ate === "acima" || baseFinal <= faixa.ate) { irrf = (baseFinal * faixa.aliquota) - faixa.deduzir; break; } }
+        if (totalBruto > 5000 && totalBruto <= 7350) { const redutor = 978.62 - (0.133145 * totalBruto); if (redutor > 0) irrf -= redutor; }
+        irrf = Math.max(0, irrf);
+    }
+
+    const descontoPlano = regrasCirurgicas.planosSESI[plano] || 0;
+    const descontoSindicato = sindicato === 'sim' ? regrasCirurgicas.valorSindicato : 0;
+    const totalDescontos = descontoFaltas + descontoAtrasos + descontoPlano + coparticipacao + descontoSindicato + emprestimo + inss + irrf + descontoVA + adiantamento + descontoVT;
+    const liquido = totalBruto - totalDescontos;
+
+    document.getElementById('inputSalarioLiquido').value = liquido.toFixed(2);
+    document.getElementById('viewAdiantamento').value = `R$ ${adiantamento.toFixed(2)}`;
+    
+    let htmlTable = `
+        <div style="background: #fff; border: 1px solid #1565c0; border-radius: 8px; overflow: hidden; margin-top: 20px;">
+            <h4 style="background: #1565c0; color: white; margin: 0; padding: 10px; text-align: center; font-size: 14px;">📑 HOLERITE CIRÚRGICO</h4>
+            <div style="padding: 20px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
+                    <tr style="border-bottom: 2px solid #ccc;"><th style="padding: 12px;">Descrição</th><th style="padding: 12px;">Ref.</th><th style="padding: 12px; text-align: right;">Proventos</th><th style="padding: 12px; text-align: right;">Descontos</th></tr>
+    `;
+
+    const addRow = (desc, ref, prov, descV) => {
+        htmlTable += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 12px;">${desc}</td><td style="padding: 12px; color: #666;">${ref}</td><td style="padding: 12px; text-align: right; color: #2e7d32; font-weight: bold;">${prov ? 'R$ ' + prov.toFixed(2) : ''}</td><td style="padding: 12px; text-align: right; color: #c62828; font-weight: bold;">${descV ? 'R$ ' + descV.toFixed(2) : ''}</td></tr>`;
+    };
+
+    if (vencBase > 0) addRow('Salário Base Contratual', `${diasTrab} d`, vencBase, null);
+    if (valorHE50 > 0) addRow('Horas Extras 50%', `${he50} h`, valorHE50, null);
+    if (valorHE60 > 0) addRow('Horas Extras 60%', `${he60} h`, valorHE60, null);
+    if (valorHE80 > 0) addRow('Horas Extras 80%', `${he80} h`, valorHE80, null);
+    if (valorHE100 > 0) addRow('Horas Extras 100%', `${he100} h`, valorHE100, null);
+    if (valorHE150 > 0) addRow('Horas Extras 150%', `${he150} h`, valorHE150, null);
+    if (valorNoturno > 0) addRow('Adicional Noturno', `${noturno} h`, valorNoturno, null);
+    if (dsrHE > 0) addRow('DSR s/ Horas Extras', `${domFeriados} d`, dsrHE, null);
+    if (dsrNoturno > 0) addRow('DSR s/ Adic. Noturno', `${domFeriados} d`, dsrNoturno, null);
+    if (descontoFaltas > 0) addRow('Faltas', `${faltas} d`, null, descontoFaltas);
+    if (descontoAtrasos > 0) addRow('Atrasos', `${atrasos} h`, null, descontoAtrasos);
+    if (adiantamento > 0) addRow('Adiantamento (Dia 15)', '40%', null, adiantamento);
+    if (inss > 0) addRow('INSS', `Base R$ ${baseINSS.toFixed(2)}`, null, inss);
+    if (irrf > 0) addRow('IRRF', `Base R$ ${baseIRRF.toFixed(2)}`, null, irrf);
+    if (descontoVA > 0) addRow('Vale Alimentação', 'Fixo', null, descontoVA);
+    if (descontoVT > 0) addRow('Vale Transporte', '6%', null, descontoVT);
+    if (descontoPlano > 0) addRow('Plano SESI', plano, null, descontoPlano);
+    if (coparticipacao > 0) addRow('Coparticipação', '-', null, coparticipacao);
+    if (descontoSindicato > 0) addRow('Contr. Sindical', '-', null, descontoSindicato);
+    if (emprestimo > 0) addRow('Empréstimo', '-', null, emprestimo);
+
+    htmlTable += `
+                    <tr style="background: #f5f5f5; font-weight: bold; border-top: 2px solid #ccc;">
+                        <td colspan="2" style="padding: 15px;">TOTAIS</td><td style="padding: 15px; text-align: right; color: #2e7d32;">R$ ${totalBruto.toFixed(2)}</td><td style="padding: 15px; text-align: right; color: #c62828;">R$ ${totalDescontos.toFixed(2)}</td>
+                    </tr>
+                    <tr style="background: #e3f2fd; font-weight: bold; font-size: 16px;">
+                        <td colspan="2" style="padding: 15px; color: #0d47a1;">LÍQUIDO A RECEBER</td><td colspan="2" style="padding: 15px; text-align: right; color: #0d47a1;">R$ ${liquido.toFixed(2)}</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="background: #e8f5e9; padding: 15px; text-align: center; font-size: 13px; color: #1b5e20;">Os valores já foram inseridos na aba de Fechamento Mensal.</div>
+        </div>
+    `;
+
+    const divAuditoria = document.getElementById('tabela-auditoria'); divAuditoria.innerHTML = htmlTable; divAuditoria.style.display = 'block';
+    window.mostrarToast(`Cálculo injetado com sucesso!`);
+};
+
+// ==========================================
+// NAVEGAÇÃO E AUTENTICAÇÃO
+// ==========================================
+window.mudarAba = (aba) => {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+    
+    const panel = document.getElementById(`painel-${aba}`);
+    const btn = document.getElementById(`btn-tab-${aba}`);
+    
+    if (panel) panel.classList.add('active'); 
+    if (btn) btn.classList.add('active');
+};
+
+window.mostrarToast = (msg) => { const t = document.getElementById('toast'); if (!t) return; t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); };
+window.togglePrivacidade = () => { document.body.classList.toggle('modo-privacidade'); localStorage.setItem('saripan_privacidade', document.body.classList.contains('modo-privacidade')); };
+
+window.fazerLogin = async () => {
+    const email = document.getElementById('emailLogin').value; const senha = document.getElementById('senhaLogin').value;
+    if (!email || !senha) return alert("Preencha e-mail e senha.");
+    const btn = document.querySelector('#tela-login .btn-action'); btn.innerText = "Entrando...";
+    try { await signInWithEmailAndPassword(auth, email, senha); } catch (e) { alert("Credenciais inválidas."); } finally { btn.innerText = "Entrar no Sistema"; }
+};
+
+window.sairApp = async () => { if (confirm("Deseja sair?")) await signOut(auth); };
+
+onAuthStateChanged(auth, (user) => {
+    if (user) { 
+        document.getElementById('tela-login').classList.add('hidden'); 
+        document.getElementById('app').classList.remove('hidden'); 
+        window.carregarTodosOsDados(); 
+    } else { 
+        document.getElementById('tela-login').classList.remove('hidden'); 
+        document.getElementById('app').classList.add('hidden'); 
+    }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    const privSalva = localStorage.getItem('saripan_privacidade') === 'true';
+    if(privSalva) document.body.classList.add('modo-privacidade');
+    
+    const hoje = new Date(); const ano = hoje.getFullYear(); const mes = String(hoje.getMonth() + 1).padStart(2, '0'); const dia = String(hoje.getDate()).padStart(2, '0');
+    if (document.getElementById('dataExtra')) document.getElementById('dataExtra').value = `${ano}-${mes}-${dia}`;
+    if (document.getElementById('mesModular')) document.getElementById('mesModular').value = `${ano}-${mes}`;
+    
+    const mesRefCalc = document.getElementById('calc-mes-ref');
+    const feriadosExtrasCalc = document.getElementById('calc-feriados-extras');
+    if (mesRefCalc) mesRefCalc.addEventListener('change', window.atualizarCalendarioCirurgico);
+    if (feriadosExtrasCalc) feriadosExtrasCalc.addEventListener('blur', window.atualizarCalendarioCirurgico);
+    
+    document.querySelectorAll('.input-horas').forEach(input => { input.addEventListener('blur', function() { this.value = window.converterParaDecimal(this.value); }); });
+    document.getElementById('calc-tipo-mes')?.addEventListener('change', window.alternarModoFerias);
+    document.getElementById('calc-dia-ferias')?.addEventListener('input', window.calcularDiasProporcionaisFerias);
+    document.getElementById('calc-qtd-ferias')?.addEventListener('input', window.calcularDiasProporcionaisFerias);
+});
