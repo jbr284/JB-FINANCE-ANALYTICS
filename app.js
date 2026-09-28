@@ -110,41 +110,27 @@ window.compartilharRelatorio = async (chaveGrupo) => {
     
     itens.sort((a, b) => new Date(a.data) - new Date(b.data));
 
-    let texto = `*Relatório SARIPAN*\n🗓️ *${quinzena}ª Quinzena - ${MESES[mes]} ${ano}*\n\n`;
-    let totalDinheiro = 0;
-    let qtdDiarias = 0;
-
+    let totalDinheiro = 0; let qtdDiarias = 0;
     let trs = '';
+
     itens.forEach(item => {
-        const [, m, d] = item.data.split('-'); 
-        const dataFmt = `${d}/${m}`;
+        const [, m, d] = item.data.split('-'); const dataFmt = `${d}/${m}`;
         
         let tipoStr = item.carga === 1 ? 'Normal' : (item.carga === 2 ? 'Dupla' : 'Tripla');
-        if (item.carga === 3 && item.justificativa) {
-            tipoStr += ` ---> ${item.justificativa}`;
-        }
+        if (item.carga === 3 && item.justificativa) tipoStr += ` ---> ${item.justificativa}`;
 
         const diaStr = item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Dom' : 'Fer');
         
-        texto += `✅ ${dataFmt} - ${tipoStr} (${diaStr}) - R$ ${item.total.toFixed(2)}\n`;
-        totalDinheiro += item.total;
-        qtdDiarias += item.multiplicador;
+        totalDinheiro += item.total; qtdDiarias += item.multiplicador;
 
         const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
-        const dObj = new Date(item.data + 'T12:00:00'); 
-        const diaDaSemana = diasSemana[dObj.getDay()];
+        const dObj = new Date(item.data + 'T12:00:00'); const diaDaSemana = diasSemana[dObj.getDay()];
 
-        trs += `<tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${dataFmt}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${diaDaSemana}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${tipoStr}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Domingo' : 'Feriado')}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #2e7d32;">R$ ${item.total.toFixed(2)}</td>
-        </tr>`;
+        trs += `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">${dataFmt}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${diaDaSemana}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${tipoStr}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Domingo' : 'Feriado')}</td><td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #2e7d32;">R$ ${item.total.toFixed(2)}</td></tr>`;
     });
 
-    texto += `\n📊 *Total de Diárias:* ${qtdDiarias}`;
-    texto += `\n💰 *Valor Total:* R$ ${totalDinheiro.toFixed(2)}`;
+    let texto = `*Relatório SARIPAN*\n🗓️ *${quinzena}ª Quinzena - ${MESES[mes]} ${ano}*\n\n`;
+    texto += `📊 *Total de Diárias:* ${qtdDiarias}\n💰 *Valor Total:* R$ ${totalDinheiro.toFixed(2)}\n\n_(Recibo detalhado em anexo)_`;
 
     document.getElementById('print-ref').innerText = `Referência: ${quinzena}ª Quinzena de ${MESES[mes]} ${ano}`;
     document.getElementById('print-total-diarias').innerText = `Total: ${qtdDiarias} diárias a receber`;
@@ -155,13 +141,11 @@ window.compartilharRelatorio = async (chaveGrupo) => {
     
     try {
         const printContainer = document.getElementById('print-container');
-        printContainer.style.top = '0';
-        printContainer.style.left = '0';
+        printContainer.style.top = '0'; printContainer.style.left = '0';
         
         const canvas = await html2canvas(document.getElementById('print-template'), { scale: 2, useCORS: true });
         
-        printContainer.style.top = '-9999px';
-        printContainer.style.left = '-9999px';
+        printContainer.style.top = '-9999px'; printContainer.style.left = '-9999px';
 
         canvas.toBlob(async (blob) => {
             const file = new File([blob], `Relatorio_Saripan_${quinzena}Q_${MESES[mes]}_${ano}.png`, { type: 'image/png' });
@@ -533,7 +517,6 @@ window.adicionarRegistro = async () => {
         window.renderizarDashboardGeral();
         window.mostrarToast("Apontamento salvo com sucesso!");
         
-        // Limpa a justificativa após salvar para não ficar presa na tela
         if(document.getElementById('justificativaTripla')) document.getElementById('justificativaTripla').value = ''; 
     } catch (e) { console.error(e); alert("Erro ao salvar!"); }
 };
@@ -561,7 +544,7 @@ window.excluirQuinzena = async (chaveGrupo) => {
     } catch (e) { console.error(e); alert("Erro ao excluir quinzena"); }
 };
 
-// IMPRESSÃO DE TABELAS ATUALIZADA COM O NOME DA JUSTIFICATIVA
+// IMPRESSÃO DE TABELAS ATUALIZADA
 window.renderizarApontamentosSaripan = () => {
     const container = document.getElementById('lista-quinzenas-container');
     if(!container) return; container.innerHTML = "";
@@ -1064,7 +1047,6 @@ window.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('dataExtra')) document.getElementById('dataExtra').value = `${ano}-${mes}-${dia}`;
     if (document.getElementById('mesModular')) document.getElementById('mesModular').value = `${ano}-${mes}`;
     
-    // ATIVAÇÃO DA NOVA LÓGICA DE JORNADA TRIPLA
     document.getElementById('tipoCarga')?.addEventListener('change', function() {
         const val = parseInt(this.value);
         const bloco = document.getElementById('bloco-justificativa');
