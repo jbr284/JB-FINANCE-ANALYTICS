@@ -108,7 +108,6 @@ window.compartilharRelatorio = async (chaveGrupo) => {
     
     itens.sort((a, b) => new Date(a.data) - new Date(b.data));
 
-    let texto = `*Relatório SARIPAN*\n🗓️ *${quinzena}ª Quinzena - ${MESES[mes]} ${ano}*\n\n`;
     let totalDinheiro = 0; let qtdDiarias = 0;
     let trs = '';
 
@@ -120,7 +119,6 @@ window.compartilharRelatorio = async (chaveGrupo) => {
 
         const diaStr = item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Dom' : 'Fer');
         
-        texto += `✅ ${dataFmt} - ${tipoStr} (${diaStr}) - R$ ${item.total.toFixed(2)}\n`;
         totalDinheiro += item.total; qtdDiarias += item.multiplicador;
 
         const diasSemana = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
@@ -129,7 +127,8 @@ window.compartilharRelatorio = async (chaveGrupo) => {
         trs += `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">${dataFmt}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${diaDaSemana}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${tipoStr}</td><td style="padding: 10px; border-bottom: 1px solid #eee;">${item.tipoDia === 1 ? 'Útil' : (item.tipoDia === 2 ? 'Domingo' : 'Feriado')}</td><td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; color: #2e7d32;">R$ ${item.total.toFixed(2)}</td></tr>`;
     });
 
-    texto += `\n📊 *Total de Diárias:* ${qtdDiarias}\n💰 *Valor Total:* R$ ${totalDinheiro.toFixed(2)}`;
+    let texto = `*Relatório SARIPAN*\n🗓️ *${quinzena}ª Quinzena - ${MESES[mes]} ${ano}*\n\n`;
+    texto += `📊 *Total de Diárias:* ${qtdDiarias}\n💰 *Valor Total:* R$ ${totalDinheiro.toFixed(2)}\n\n_(Recibo detalhado em anexo)_`;
 
     document.getElementById('print-ref').innerText = `Referência: ${quinzena}ª Quinzena de ${MESES[mes]} ${ano}`;
     document.getElementById('print-total-diarias').innerText = `Total: ${qtdDiarias} diárias a receber`;
